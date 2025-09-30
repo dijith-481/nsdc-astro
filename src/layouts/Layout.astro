@@ -1,9 +1,8 @@
 ---
-// src/layouts/Layout.astro
-import { Quicksand } from "next/font/google"; // Note: next/font won't work. We'll use a CSS import instead.
+import { ClientRouter } from "astro:transitions";
 import "../styles/global.css";
-import Header from "../components/Header";
-import Footer from "../components/Footer.astro";
+import Header from "../components/Header.tsx";
+import Footer from "../components/Footer.astro"; 
 import type { LinkColumn } from "../types";
 
 interface Props {
@@ -18,34 +17,22 @@ const { title, links } = Astro.props;
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content="Astro description" />
+    <meta name="description" content="NSDC MEC Website" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
-
-    <!-- Google Fonts Import -->
+    <ClientRouter />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap"
       rel="stylesheet"
     />
-    <style>
-      body {
-        font-family: "Quicksand", sans-serif;
-      }
-    </style>
   </head>
   <body class="antialiased">
-    <!-- 
-      Header and Footer are React components that need interactivity.
-      The `client:load` directive tells Astro to load and hydrate them in the browser.
-     -->
     <Header client:load />
     <main>
-      <slot /> <!-- This is where page content will be injected -->
+      <slot />
     </main>
-    <Footer links={links}  />
+    <Footer links={links} />
   </body>
 </html>

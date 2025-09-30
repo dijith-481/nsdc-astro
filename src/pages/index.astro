@@ -1,9 +1,7 @@
 ---
-// src/pages/index.astro
 import Layout from "../layouts/Layout.astro";
 import { dataService } from "../lib/data-service";
 
-// Import your React components
 import Hero from "../components/Hero";
 import About from "../components/About.astro";
 import Events from "../components/Events";
@@ -11,17 +9,13 @@ import Projects from "../components/Projects.astro";
 import Resources from "../components/Resources.astro";
 import TeamPreview from "../components/TeamPreview.astro";
 
-// 1. Fetch data at build time
 const data = await dataService.getInitialData();
 if (!data) {
-  // Handle error case, maybe render an error page or throw an error
   throw new Error("Failed to load initial data for the homepage.");
 }
 ---
 
 <Layout title="NSDC MEC" links={data.links}>
-  <!-- 2. Render React components and pass data as props -->
-  <!-- Components with client-side interactivity need a client:* directive -->
   <Hero
     content={data.heroContent}
     announcements={data.announcements}
