@@ -1,0 +1,22 @@
+---
+// src/pages/resources.astro
+import Layout from "../layouts/Layout.astro";
+import { dataService } from "../lib/data-service";
+import Resources from "../components/Resources.astro";
+
+// Fetch data at build time
+const data = await dataService.getInitialData();
+
+if (!data) {
+  throw new Error("Failed to load data for the resources page.");
+}
+---
+
+<Layout title="Resources | NSDC MEC" links={data.links}>
+  <div class="bg-white">
+    <div class="w-full">
+      <!-- The Resources component renders the full list of resources -->
+      <Resources resources={data.resources} isPreview={false} />
+    </div>
+  </div>
+</Layout>

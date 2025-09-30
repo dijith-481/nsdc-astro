@@ -1,0 +1,24 @@
+---
+// src/pages/events.astro
+import Layout from "../layouts/Layout.astro";
+import { dataService } from "../lib/data-service";
+import Events from "../components/Events";
+
+// Fetch all necessary data at build time
+const data = await dataService.getInitialData();
+
+if (!data) {
+  throw new Error("Failed to load data for the events page.");
+}
+---
+
+<Layout title="Events | NSDC MEC" links={data.links}>
+  <div class="bg-background text-[#021927]">
+    <!--
+      The Events component is an "island of interactivity".
+      `client:load` tells Astro to ship its JavaScript to the browser and hydrate it immediately.
+      We pass the full events list and set isPreview to false.
+    -->
+    <Events events={data.events} isPreview={false} client:load />
+  </div>
+</Layout>

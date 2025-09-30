@@ -1,0 +1,21 @@
+---
+// src/pages/projects.astro
+import Layout from "../layouts/Layout.astro";
+import { dataService } from "../lib/data-service";
+import Projects from "../components/Projects.astro";
+
+// Fetch data at build time
+const data = await dataService.getInitialData();
+
+if (!data) {
+  throw new Error("Failed to load data for the projects page.");
+}
+---
+
+<Layout title="Projects | NSDC MEC" links={data.links}>
+  <div class="bg-background text-[#021927]">
+    <div class="w-full">
+            <Projects projects={data.projects} isPreview={false} />
+    </div>
+  </div>
+</Layout>
