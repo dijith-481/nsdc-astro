@@ -17,9 +17,6 @@ async function fetchJsonFromUrl<T>(url: string): Promise<T> {
 
 const mockDataService = {
   getInitialData: async (): Promise<MockData> => {
-    console.log("Fetching data from external URLs for build...");
-
-    // Read the URLs from environment variables
     const urls = {
       hero: process.env.MOCK_HERO_URL,
       announcements: process.env.MOCK_ANNOUNCEMENTS_URL,
