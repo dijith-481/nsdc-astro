@@ -14,22 +14,42 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   const cacheKey = pathname;
-  const cachedHtml = store.getCachedHtml(cacheKey);
+  const eTag = `"${cacheKey}-${store.lastFetched}"`;
 
-  if (cachedHtml) {
-    const eTag = `"${cacheKey}-${store.lastFetched}"`;
+  if (request.headers.get("if-none-match") === eTag) {
+    console.log("etag");
+    return new Response(null, {
+      status: 304,
+      headers: {
+        ETag: eTag,
+        "Cache-Control": "public, max-age=120, stale-while-revalidate=3600",
+      },
+    });
+  }
 
-    if (request.headers.get("if-none-match") === eTag) {
-      console.log("client cache hit");
-      return new Response(null, { status: 304 });
+  const cachedContent = store.getCachedHtml(cacheKey);
+
+  if (cachedContent) {
+    if (cachedContent.startsWith("__REDIRECT__")) {
+      console.log("redirect");
+      const [, status, location] = cachedContent.split("|");
+      return new Response(null, {
+        status: parseInt(status),
+        headers: {
+          Location: location,
+          "Cache-Control": "public, max-age=3600",
+          ETag: eTag,
+          "X-Cache": "HIT-REDIRECT",
+        },
+      });
     }
-    console.log("server cache hit");
+    console.log("cache hit");
 
-    return new Response(cachedHtml, {
+    return new Response(cachedContent, {
       status: 200,
       headers: {
         "Content-Type": "text/html",
-        "Cache-Control": "public, max-age=30, stale-while-revalidate=3600",
+        "Cache-Control": "public, max-age=120, stale-while-revalidate=3600",
         ETag: eTag,
         "X-Cache": "HIT",
       },
@@ -37,7 +57,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   const response = await next();
-  console.log("cache miss");
+  console.log("miss");
 
   if (
     response.status === 200 &&
@@ -46,13 +66,24 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const html = await response.clone().text();
     store.setCachedHtml(cacheKey, html);
 
-    const eTag = `"${cacheKey}-${store.lastFetched}"`;
     response.headers.set(
       "Cache-Control",
       "public, max-age=120, stale-while-revalidate=3600",
     );
     response.headers.set("ETag", eTag);
     response.headers.set("X-Cache", "MISS");
+  } else if (response.status >= 300 && response.status < 400) {
+    const location = response.headers.get("Location");
+    if (location) {
+      store.setCachedHtml(
+        cacheKey,
+        `__REDIRECT__|${response.status}|${location}`,
+      );
+
+      response.headers.set("Cache-Control", "public, max-age=3600");
+      response.headers.set("ETag", eTag);
+      response.headers.set("X-Cache", "MISS-REDIRECT");
+    }
   }
 
   return response;
