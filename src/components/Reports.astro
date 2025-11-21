@@ -8,21 +8,17 @@ interface Props {
 const { reports } = Astro.props;
 ---
 
-<section
-  class="py-16 lg:py-24 bg-bg-0 transition-colors duration-300 border-t border-bg-2"
->
+<section class="py-16 lg:py-24 bg-bg-0 transition-colors duration-300">
   <div class="container mx-auto px-4 sm:px-6 lg:px-8">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
       <div class="lg:col-span-3">
         <div class="lg:sticky lg:top-24">
           <h2
-            class="text-4xl font-bold font-serif text-fg-0 tracking-tight mb-4"
+            class="text-4xl font-bold font-sans text-fg-0 tracking-tight mb-4"
           >
             Reports
           </h2>
-          <p class="text-fg-1 font-sans text-sm leading-relaxed">
-            Detailed documentation, event summaries, and annual chapter reports.
-          </p>
+          <p class="text-fg-1 font-sans text-sm leading-relaxed"></p>
         </div>
       </div>
 
@@ -31,7 +27,7 @@ const { reports } = Astro.props;
           reports.length > 0 ? (
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {reports.map((report) => (
-                <article class="group flex flex-col h-full bg-bg-1 border border-bg-2 rounded-sm overflow-hidden hover:shadow-md hover:border-fg-0/20 transition-all duration-300">
+                <article class="group flex flex-col h-full bg-bg-1 border border-bg-2  overflow-hidden  hover:border-fg-0/20 transition-all duration-300">
                   <div class="relative w-full aspect-[4/3] overflow-hidden bg-bg-2 border-b border-bg-2">
                     <img
                       src={report.img}
@@ -50,7 +46,7 @@ const { reports } = Astro.props;
                       </span>
                     </div>
 
-                    <h3 class="text-xl font-bold font-serif text-fg-0 leading-tight mb-3 group-hover:text-primary transition-colors">
+                    <h3 class="text-xl font-bold font-sans text-fg-0 leading-tight mb-3 group-hover:text-primary transition-colors">
                       {report.title}
                     </h3>
 
@@ -61,7 +57,7 @@ const { reports } = Astro.props;
                     <div class="mt-6 pt-4 border-t border-bg-2 flex items-center justify-between">
                       <a
                         href={"/report/" + report.id}
-                        class="text-sm font-bold text-fg-0 group-hover:text-primary transition-colors inline-flex items-center gap-2"
+                        class="text-sm relative font-bold text-fg-0 group-hover:text-primary transition-colors inline-flex items-center gap-2"
                       >
                         Read Report
                         <svg
@@ -77,6 +73,7 @@ const { reports } = Astro.props;
                             d="M17 8l4 4m0 0l-4 4m4-4H3"
                           />
                         </svg>
+                        <span class="absolute bottom-0 left-0 h-[1px] w-full bg-fg-0 transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-left" />
                       </a>
                     </div>
                   </div>

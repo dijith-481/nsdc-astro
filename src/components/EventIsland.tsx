@@ -1,11 +1,4 @@
-import {
-  createSignal,
-  createEffect,
-  onMount,
-  onCleanup,
-  For,
-  Show,
-} from "solid-js";
+import { createSignal, onMount, onCleanup, For, Show } from "solid-js";
 import type { Event } from "../types";
 
 interface Props {
@@ -49,17 +42,51 @@ export default function EventsIsland(props: Props) {
   let isProgrammaticScroll = false;
   let scrollTimeout: any = null;
 
+  const syncSidebar = (id: string) => {
+    if (mobileNavRef) {
+      const activeEl = mobileNavRef.querySelector(
+        `[data-target="${id}"]`,
+      ) as HTMLElement;
+      if (activeEl) {
+        const containerCenter = mobileNavRef.clientWidth / 2;
+        const itemCenter = activeEl.offsetLeft + activeEl.offsetWidth / 2;
+        console.log("d");
+        mobileNavRef.scrollTo({
+          left: itemCenter - containerCenter,
+          behavior: "smooth",
+        });
+      }
+    }
+
+    if (desktopNavRef) {
+      const activeEl = desktopNavRef.querySelector(
+        `[data-target="${id}"]`,
+      ) as HTMLElement;
+      if (activeEl) {
+        const topPos = activeEl.offsetTop;
+        const containerHeight = desktopNavRef.clientHeight;
+        const elementHeight = activeEl.clientHeight;
+        const targetScroll = topPos - containerHeight / 2 + elementHeight / 2;
+
+        desktopNavRef.scrollTo({
+          top: targetScroll,
+          behavior: "smooth",
+        });
+      }
+    }
+  };
+
   const updateButtonState = () => {
     if (!archiveContainerRef) return;
     const { scrollLeft, scrollWidth, clientWidth } = archiveContainerRef;
-    console.log(scrollLeft);
-    setCanScrollLeft(scrollLeft > 1);
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+    setCanScrollLeft(scrollLeft > 5);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5);
   };
 
   const scrollArchive = (direction: "left" | "right") => {
     if (!archiveContainerRef) return;
-    const scrollAmount = archiveContainerRef.offsetWidth * 0.8;
+    const scrollAmount = archiveContainerRef.clientWidth * 0.9;
+
     archiveContainerRef.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
       behavior: "smooth",
@@ -78,27 +105,43 @@ export default function EventsIsland(props: Props) {
 
     scrollTimeout = setTimeout(() => {
       isProgrammaticScroll = false;
-
       setActiveId(targetId);
     }, 1000);
 
     setActiveId(targetId);
+
+    syncSidebar(targetId);
+
     const targetItem = props.events.find((ev) => ev.id === targetId);
     if (targetItem) setMobileTitle(targetItem.title);
 
-    if (isArchiveItem) {
-      const sectionEl = document.getElementById("past-events-section");
-      if (sectionEl) {
-        const headerOffset = window.matchMedia("(max-width: 767px)").matches
-          ? 176
-          : 88;
-        const elementPosition = sectionEl.getBoundingClientRect().top;
-        const offsetPosition =
-          elementPosition + window.pageYOffset - headerOffset;
+    if (window.matchMedia("(min-width: 768px)").matches) {
+      const el = document.getElementById(`event-${targetId}`);
+      if (el) {
+        const offset = 100;
+        const elementPosition = el.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - offset;
         window.scrollTo({ top: offsetPosition, behavior: "smooth" });
       }
 
-      setTimeout(() => {
+      if (isArchiveItem && archiveContainerRef) {
+        const targetEl = document.getElementById(`event-${targetId}`);
+        if (targetEl) {
+          const leftPos =
+            targetEl.offsetLeft -
+            (archiveContainerRef.clientWidth - targetEl.clientWidth) / 2;
+          archiveContainerRef.scrollTo({ left: leftPos, behavior: "smooth" });
+        }
+      }
+    } else {
+      if (isArchiveItem) {
+        const sectionEl = document.getElementById("past-events-section");
+        if (sectionEl) {
+          const offset = 180;
+          const elementPosition = sectionEl.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - offset;
+          window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+        }
         if (archiveContainerRef) {
           const targetEl = document.getElementById(`event-${targetId}`);
           if (targetEl) {
@@ -108,24 +151,20 @@ export default function EventsIsland(props: Props) {
             archiveContainerRef.scrollTo({ left: leftPos, behavior: "smooth" });
           }
         }
-      }, 100);
-    } else {
-      const el = document.getElementById(`event-${targetId}`);
-      if (el) {
-        const headerOffset = window.matchMedia("(max-width: 767px)").matches
-          ? 130
-          : 88;
-        const elementPosition = el.getBoundingClientRect().top;
-        const offsetPosition =
-          elementPosition + window.pageYOffset - headerOffset;
-        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+      } else {
+        const el = document.getElementById(`event-${targetId}`);
+        if (el) {
+          const offset = 140;
+          const elementPosition = el.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - offset;
+          window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+        }
       }
     }
   };
 
   const determineActiveArchiveItem = () => {
     if (!archiveContainerRef) return null;
-
     const containerCenter =
       archiveContainerRef.scrollLeft + archiveContainerRef.clientWidth / 2;
     let closestId = "";
@@ -137,7 +176,6 @@ export default function EventsIsland(props: Props) {
       const el = items[i] as HTMLElement;
       const itemCenter = el.offsetLeft + el.offsetWidth / 2;
       const diff = Math.abs(containerCenter - itemCenter);
-
       if (diff < minDiff) {
         minDiff = diff;
         closestId = el.getAttribute("data-id") || "";
@@ -151,12 +189,14 @@ export default function EventsIsland(props: Props) {
     const verticalObserver = new IntersectionObserver(
       (entries) => {
         if (isProgrammaticScroll) return;
-
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const id = entry.target.getAttribute("data-id");
             const title = entry.target.getAttribute("data-title");
-            if (id) setActiveId(id);
+            if (id) {
+              setActiveId(id);
+              syncSidebar(id);
+            }
             if (title) setMobileTitle(title);
           }
         });
@@ -171,13 +211,13 @@ export default function EventsIsland(props: Props) {
     const archiveSectionObserver = new IntersectionObserver(
       (entries) => {
         if (isProgrammaticScroll) return;
-
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const active = determineActiveArchiveItem();
             if (active && active.id) {
               setActiveId(active.id);
               setMobileTitle(active.title);
+              syncSidebar(active.id);
             }
           }
         });
@@ -191,16 +231,13 @@ export default function EventsIsland(props: Props) {
     const handleHorizontalScroll = () => {
       if (!archiveContainerRef) return;
       updateButtonState();
-
       if (isProgrammaticScroll) return;
 
       if (archiveSection) {
         const rect = archiveSection.getBoundingClientRect();
-
         const isVisible =
           rect.top < window.innerHeight / 2 &&
           rect.bottom > window.innerHeight / 2;
-
         if (isVisible) {
           const active = determineActiveArchiveItem();
           if (active && active.id) {
@@ -229,29 +266,12 @@ export default function EventsIsland(props: Props) {
     });
   });
 
-  createEffect(() => {
-    const id = activeId();
-
-    if (mobileNavRef) {
-      const activeEl = mobileNavRef.querySelector(`[data-target="${id}"]`);
-      if (activeEl)
-        activeEl.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "center",
-        });
-    }
-    if (desktopNavRef) {
-      const activeEl = desktopNavRef.querySelector(`[data-target="${id}"]`);
-      if (activeEl)
-        activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-  });
-
   return (
-    <section class="bg-bg-0 transition-colors duration-300 relative">
+    <section
+      id="events"
+      class="bg-bg-0 transition-colors duration-300 relative scroll-mt-20"
+    >
       <div class="w-full md:px-4">
-        {/* --- MOBILE HEADER (Sticky) --- */}
         <div
           id="mobile-header-wrapper"
           class="md:hidden sticky top-10 z-30 bg-bg-0/85 backdrop-blur-md border-b border-bg-2"
@@ -519,7 +539,7 @@ export default function EventsIsland(props: Props) {
 
                   <div
                     ref={archiveContainerRef}
-                    class="flex flex-row overflow-x-auto snap-x sm:gap-6 gap-[4vw] snap-mandatory scrollbar-hide border-fg-0/20 border-t border-b"
+                    class="flex flex-row overflow-x-auto snap-x snap-mandatory sm:gap-6 gap-[4vw] scrollbar-hide border-fg-0/20 border-t border-b"
                   >
                     <For each={archivedEvents()}>
                       {(event) => (
@@ -527,7 +547,7 @@ export default function EventsIsland(props: Props) {
                           id={`event-${event.id}`}
                           data-id={event.id}
                           data-title={event.title}
-                          class="snap-start shrink-0 w-[92vw]   sm:max-w-172 border-l border-r border-fg-0/20"
+                          class="snap-start shrink-0 w-[92vw] sm:max-w-172 border-l border-r border-fg-0/20"
                         >
                           <div class="grid grid-cols-1 sm:grid-cols-2 items-center h-full">
                             <div class="h-full w-full overflow-hidden">

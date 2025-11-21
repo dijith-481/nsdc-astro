@@ -340,6 +340,14 @@
     "title": "Founding Team 2023",
     "members": [
       {
+        "id": "mem-1",
+        "name": "Jane Doe",
+        "title": "Chairperson",
+        "img": "https://i.pravatar.cc/150?u=jane_doe",
+        "linkedin": "https://linkedin.com/in/janedoeexec",
+        "priority": 3
+      },
+      {
         "id": "mem-3",
         "name": "Alex Johnson",
         "title": "Founder",

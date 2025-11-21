@@ -6,37 +6,39 @@ interface Props {
 }
 
 const { member } = Astro.props;
+
+const transitionName = `member-${member.name.replace(/\s+/g, "-").toLowerCase()}`;
 ---
 
 <div
-  class="items-center border border-gray-200/80 h-full grid grid-cols-7 bg-white transition-shadow duration-200"
-  transition:name={`member-${member.id}`}
+  class="items-center h-full grid grid-cols-7"
+  transition:name={transitionName}
 >
   <img
-    class="aspect-[3/4] w-full object-cover flex-shrink-0 col-span-3 bg-gray-100"
+    class="aspect-[3/4] h-full object-cover flex-shrink-0 col-span-3"
     src={member.img}
     alt={member.name}
     loading="lazy"
   />
   <div
-    class="flex flex-col justify-between h-full ml-4 flex-grow col-span-4 p-2"
+    class="flex flex-col justify-between h-full ml-2 flex-grow col-span-4 p-2"
   >
     <div>
-      <h3 class="font-semibold text-gray-900 text-sm">{member.name}</h3>
+      <h3 class="font-semibold text-fg-0 text-sm">{member.name}</h3>
     </div>
     <div>
-      <p class="text-xs text-gray-500">{member.title}</p>
+      <p class="text-xs text-fg-1">{member.title}</p>
 
       {
         (member.linkedin || member.github) && (
-          <div class="flex items-center gap-3 mt-2">
+          <div class="flex items-center gap-3 mt-2 ">
             {member.linkedin && (
               <a
                 href={member.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${member.name}'s LinkedIn Profile`}
-                class="text-gray-400 hover:text-gray-800 transition-colors"
+                class="text-fg-1 hover:text-fg-0 transition-colors bg-fg-0/20 p-1"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -61,7 +63,7 @@ const { member } = Astro.props;
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${member.name}'s Github Profile`}
-                class="text-gray-400 hover:text-gray-800 transition-colors"
+                class="text-fg-1 hover:text-fg-0 transition-colors bg-fg-0/20 p-1"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

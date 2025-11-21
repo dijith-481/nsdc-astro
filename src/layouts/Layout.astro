@@ -48,12 +48,12 @@ const { title, links } = Astro.props;
       );
     </script>
   </head>
-  <body class="antialiased min-h-screen">
-    <div transition:persist="header">
+  <body class="antialiased min-h-screen flex flex-col overflow-x-hidden">
+    <div transition:persist="header" class="sticky top-0 z-50 w-full">
       <Header />
     </div>
 
-    <main class="flex-grow w-full mt-10">
+    <main class="flex-grow w-full mt-10" transition:name="main">
       <slot />
     </main>
 
