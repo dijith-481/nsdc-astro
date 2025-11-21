@@ -1,124 +1,136 @@
-import type { MockData, TeamYear } from "../types";
+import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { store } from "./store";
+import fs from "node:fs/promises";
+import path from "node:path";
+import type { MockData, Event, Project, Announcement } from "../types";
+import { fetchCollection, fetchTeams, fetchShortUrls } from "./db-operations";
 
-async function fetchJsonFromUrl<T>(url: string): Promise<T> {
-  if (!url) {
-    console.warn("fetchJsonFromUrl called with an undefined URL.");
-    return {} as T;
-  }
+/* =========================================
+   HELPER: JSON READER (Used by both modes)
+   ========================================= */
+const readJson = async (filename: string) => {
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-    }
-    return response.json();
-  } catch (error) {
-    console.error(`Error fetching from ${url}:`, error);
-    throw error;
+    const filePath = path.join(process.cwd(), "public", "mock-db", filename);
+    const fileContent = await fs.readFile(filePath, "utf-8");
+    return JSON.parse(fileContent);
+  } catch (e) {
+    console.error(`Failed to load mock file: ${filename}`, e);
+    return null;
   }
-}
-
-const productionDataService = {
-  getInitialData: async (): Promise<MockData> => {
-    const urls = {
-      hero: process.env.MOCK_HERO_URL,
-      about: process.env.MOCK_ABOUT_URL,
-      resources: process.env.MOCK_RESOURCES_URL,
-      teamsPreview: process.env.MOCK_TEAM_PREVIEW_URL,
-      links: process.env.MOCK_LINKS_URL,
-    };
-
-    try {
-      const serverUrl = process.env.SERVER_URL;
-      const serverDataResponse = await fetch(`${serverUrl}/api/data`);
-
-      if (!serverDataResponse.ok) {
-        throw new Error(`Server returned ${serverDataResponse.status}`);
-      }
-
-      const serverData = await serverDataResponse.json();
-
-      const [heroContent, about, resources, teamsPreview, links] =
-        await Promise.all([
-          fetchJsonFromUrl<any>(urls.hero!),
-          fetchJsonFromUrl<any>(urls.about!),
-          fetchJsonFromUrl<any>(urls.resources!),
-          fetchJsonFromUrl<any>(urls.teamsPreview!),
-          fetchJsonFromUrl<any>(urls.links!),
-        ]);
-
-      return {
-        heroContent,
-        announcements: serverData.announcements || [],
-        about,
-        events: serverData.events || [],
-        projects: serverData.projects || [],
-        resources,
-        teams: serverData.teams || [],
-        teamsPreview,
-        links: links || [],
-      };
-    } catch (error) {
-      console.error("Failed to fetch data during build:", error);
-      throw new Error("Could not load data from server-side service.");
-    }
-  },
 };
 
-const mockDataService = {
-  getInitialData: async (): Promise<MockData> => {
-    const urls = {
-      hero: process.env.MOCK_HERO_URL,
-      about: process.env.MOCK_ABOUT_URL,
-      resources: process.env.MOCK_RESOURCES_URL,
-      teamsPreview: process.env.MOCK_TEAM_PREVIEW_URL,
-      links: process.env.MOCK_LINKS_URL,
-    };
+/* =========================================
+   1. MOCK DATA LOADER (Pure File System)
+   ========================================= */
+const loadMockData = async () => {
+  console.log("Loading ALL data from filesystem...");
+  const [
+    hero,
+    about,
+    resources,
+    teamsPreview,
+    links,
+    announcements,
+    events,
+    projects,
+    teams,
+  ] = await Promise.all([
+    readJson("hero.json"),
+    readJson("about.json"),
+    readJson("resources.json"),
+    readJson("team-preview.json"),
+    readJson("links.json"),
+    readJson("announcements.json"),
+    readJson("events.json"),
+    readJson("projects.json"),
+    readJson("teams.json"),
+  ]);
 
-    try {
-      const [
-        heroContent,
-        announcements,
-        about,
-        events,
-        projects,
-        resources,
-        teams,
-        teamsPreview,
-        links,
-      ] = await Promise.all([
-        fetchJsonFromUrl<any>(urls.hero!),
-        fetchJsonFromUrl<any[]>(
-          process.env.MOCK_ANNOUNCEMENTS_URL || urls.hero!,
-        ),
-        fetchJsonFromUrl<any>(urls.about!),
-        fetchJsonFromUrl<any[]>(process.env.MOCK_EVENTS_URL || urls.hero!),
-        fetchJsonFromUrl<any[]>(process.env.MOCK_PROJECTS_URL || urls.hero!),
-        fetchJsonFromUrl<any>(urls.resources!),
-        fetchJsonFromUrl<TeamYear[]>(process.env.MOCK_TEAMS_URL || urls.hero!),
-        fetchJsonFromUrl<any>(urls.teamsPreview!),
-        fetchJsonFromUrl<any>(urls.links!),
-      ]);
+  const siteData: MockData = {
+    heroContent: hero || {},
+    about: about || {},
+    resources: resources || [],
+    teamsPreview: teamsPreview || {},
+    links: links || [],
+    announcements: announcements || [],
+    events: events || [],
+    projects: projects || [],
+    teams: teams || [],
+  };
 
-      return {
-        heroContent,
-        announcements: announcements || [],
-        about,
-        events: events || [],
-        projects: projects || [],
-        resources,
-        teams: teams || [],
-        teamsPreview,
-        links: links || [],
-      };
-    } catch (error) {
-      console.error("Failed to fetch mock data:", error);
-      throw new Error("Could not load mock data.");
-    }
-  },
+  const routes = [
+    {
+      slug: "discord",
+      destination: "https://discord.gg/mock-link",
+      type: "redirect",
+    },
+    {
+      slug: "hub",
+      destination: "https://example.com",
+      type: "iframe",
+      title: "Resource Hub",
+    },
+  ] as any[];
+
+  return { siteData, routes };
 };
 
-const USE_MOCK_DATA = process.env.USE_MOCK_DATA === "true";
+/* =========================================
+   2. HYBRID LOADER (Firestore + Mock Fallback)
+   ========================================= */
+const loadFirestoreData = async () => {
+  console.log("Loading HYBRID data (DB + Filesystem)...");
 
-export const dataService = USE_MOCK_DATA
-  ? mockDataService
-  : productionDataService;
+  if (!getApps().length) {
+    const serviceAccount = JSON.parse(
+      process.env.FIREBASE_SERVICE_ACCOUNT || "{}",
+    );
+    initializeApp({ credential: cert(serviceAccount) });
+  }
+
+  const dbPromise = Promise.all([
+    fetchTeams(),
+    fetchCollection<Event>("events"),
+    fetchCollection<Project>("projects"),
+    fetchCollection<Announcement>("announcements"),
+    fetchShortUrls(),
+  ]);
+
+  //TODO add these data to db
+  const filePromise = Promise.all([
+    readJson("hero.json"),
+    readJson("about.json"),
+    readJson("resources.json"),
+    readJson("team-preview.json"),
+    readJson("links.json"),
+  ]);
+
+  const [
+    [dbTeams, dbEvents, dbProjects, dbAnnouncements, dbRoutes],
+    [hero, about, resources, teamsPreview, links],
+  ] = await Promise.all([dbPromise, filePromise]);
+
+  const siteData: MockData = {
+    teams: dbTeams,
+    events: dbEvents,
+    projects: dbProjects,
+    announcements: dbAnnouncements,
+
+    heroContent: hero || {},
+    about: about || {},
+    resources: resources || [],
+    teamsPreview: teamsPreview || {},
+    links: links || [],
+  };
+
+  return { siteData, routes: dbRoutes as any[] };
+};
+
+const useMock = process.env.USE_MOCK_DATA === "true";
+console.log(useMock, "usemock");
+
+store.registerFetcher(useMock ? loadMockData : loadFirestoreData);
+
+export const dataService = {
+  getInitialData: async () => store.getSiteData(),
+};
