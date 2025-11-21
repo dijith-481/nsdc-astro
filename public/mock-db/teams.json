@@ -345,6 +345,84 @@
         "title": "Founder",
         "img": "https://i.pravatar.cc/150?u=alex_j",
         "priority": 1
+      },
+      {
+        "id": "mem-7",
+        "name": "David Lee",
+        "title": "Lead Engineer",
+        "img": "https://i.pravatar.cc/150?u=david_l",
+        "linkedin": "https://linkedin.com/in/davidleeng",
+        "github": "https://github.com/leedavidtech",
+        "priority": 5
+      },
+      {
+        "id": "mem-8",
+        "name": "Jessica Alba",
+        "title": "Marketing Manager",
+        "img": "https://i.pravatar.cc/150?u=jessica_a",
+        "priority": 3
+      },
+      {
+        "id": "mem-9",
+        "name": "Chris Hemsworth",
+        "title": "Product Owner",
+        "img": "https://i.pravatar.cc/150?u=chris_h",
+        "linkedin": "https://linkedin.com/in/chrishemsworthpo",
+        "priority": 4
+      },
+      {
+        "id": "mem-10",
+        "name": "Anna Kendrick",
+        "title": "HR Specialist",
+        "img": "https://i.pravatar.cc/150?u=anna_k",
+        "priority": 5
+      },
+      {
+        "id": "mem-11",
+        "name": "Robert Downey",
+        "title": "Chief Technology Officer (CTO)",
+        "img": "https://i.pravatar.cc/150?u=robert_d",
+        "github": "https://github.com/rdowneycto",
+        "priority": 1
+      },
+      {
+        "id": "mem-12",
+        "name": "Scarlett Johansson",
+        "title": "Chief Financial Officer (CFO)",
+        "img": "https://i.pravatar.cc/150?u=scarlett_j",
+        "linkedin": "https://linkedin.com/in/scarlettjohanssoncfo",
+        "priority": 1
+      },
+      {
+        "id": "mem-13",
+        "name": "Tom Holland",
+        "title": "Software Developer",
+        "img": "https://i.pravatar.cc/150?u=tom_h",
+        "github": "https://github.com/tomhollanddev",
+        "priority": 5
+      },
+      {
+        "id": "mem-14",
+        "name": "Zendaya Coleman",
+        "title": "Data Scientist",
+        "img": "https://i.pravatar.cc/150?u=zendaya_c",
+        "linkedin": "https://linkedin.com/in/zendayads",
+        "priority": 4
+      },
+      {
+        "id": "mem-15",
+        "name": "Ryan Reynolds",
+        "title": "Communications Director",
+        "img": "https://i.pravatar.cc/150?u=ryan_r",
+        "priority": 2
+      },
+      {
+        "id": "mem-16",
+        "name": "Blake Lively",
+        "title": "Senior Consultant",
+        "img": "https://i.pravatar.cc/150?u=blake_l",
+        "linkedin": "https://linkedin.com/in/blakelivelyconsult",
+        "priority": 3
       }
     ]
   }

@@ -1,6 +1,7 @@
 {
-  "type": "url",
-  "src": "https://nsdc.mec.ac.in",
+  "type": "image",
+  "src": "https://images.unsplash.com/photo-1556740758-90de374c12ad?q=80&w=2070&auto=format&fit=crop",
   "href": "https://www.google.com",
-  "desc": "lorem ipsum sdfoadf sdlfjawlf wog glawf awjroga ga faowa f g aewoawgr ar gar gpa rg"
+  "desc": "lore ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et",
+  "buttonText": "visit"
 }

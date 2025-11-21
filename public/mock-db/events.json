@@ -2,7 +2,7 @@
   {
     "id": "event-1",
     "relation": "ml-workshop-2024",
-    "date": "OCT 15, 2024",
+    "date": "OCT 15, 2026",
     "title": "Machine Learning Foundations",
     "desc": "A hands-on workshop covering the fundamentals of machine learning and practical applications.",
     "img": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2070&auto=format&fit=crop",
@@ -88,7 +88,18 @@
     "relation": "networking-mixer-2023",
     "date": "JUN 12, 2023",
     "title": "Student-Alumni Networking Mixer",
-    "desc": "An evening for students to connect with alumni working in the data industry and learn from their experiences.",
+    "desc": "An evening for students to connect with alumni working in the data industry and learn from their experiences.An evening for students to connect with alumni working in the data industry and learn from their experiences.",
+    "tags": [
+      "Machine Learning",
+      "Data Science",
+      "Python",
+      "Pandas",
+      "NumPy",
+      "Scikit-learn",
+      "TensorFlow",
+      "Keras"
+    ],
+    "link": "#",
     "img": "https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=2070&auto=format&fit=crop",
     "isArchived": true
   }

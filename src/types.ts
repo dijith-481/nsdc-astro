@@ -27,6 +27,7 @@ export interface Event {
   img: string;
   isArchived: boolean;
   tags?: string[];
+  buttonText?: string;
   link?: string;
 }
 
@@ -51,7 +52,6 @@ export interface Report {
 export interface Resource {
   id: string;
   title: string;
-  date: string;
   desc: string;
   img: string;
   link: string;
