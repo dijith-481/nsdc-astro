@@ -1,0 +1,131 @@
+---
+import type { HeroContent, Announcement } from "../types";
+import Announcements from "./AnnouncementIsland";
+
+interface Props {
+  content: HeroContent;
+  announcements: Announcement[];
+}
+
+const { content, announcements } = Astro.props;
+
+const targetLink = content.type === "url" ? content.src : content.href;
+const overlayText = content.desc;
+const buttonText = content.buttonText || "Learn More";
+---
+
+<section
+  id="hero"
+  class="bg-bg-0 transition-colors duration-300 overflow-hidden"
+>
+  <div
+    class="grid grid-rows-9 md:grid-rows-1 md:grid-cols-3 md:gap-12 items-stretch min-h-[calc(100vh-80px)]"
+  >
+    <div
+      class="md:col-span-1 row-span-5 md:row-span-1 flex flex-col p-4 md:p-8 pt-6 md:pt-12 md:justify-between relative z-10"
+    >
+      <div class="flex flex-col gap-4 md:gap-0">
+        <Announcements announcements={announcements} client:load />
+        <h1
+          class="text-6xl md:text-6xl font-extrabold tracking-tight text-fg-0 font-sans leading-[1.1]"
+        >
+          National Students Data Corps
+        </h1>
+        <p class="text-xl md:text-2xl text-fg-1 mt-1 font-serif">MEC Chapter</p>
+      </div>
+      <p
+        class="text-lg text-fg-1 mt-8 md:mt-4 md:mb-0 font-sans leading-relaxed"
+      >
+        Bridging the gap between academic curriculum and industry demand in
+        data-centric careers.
+      </p>
+    </div>
+
+    <div
+      class="md:col-span-2 md:row-span-1 row-span-4 w-full h-[400px] md:h-auto relative group bg-bg-2 overflow-hidden"
+    >
+      {
+        content.type === "image" && (
+          <img
+            src={content.src}
+            alt="Hero visual"
+            class="w-full h-full object-cover"
+          />
+        )
+      }
+      {
+        content.type === "video" && (
+          <video
+            src={content.src}
+            class="w-full h-full object-cover"
+            autoplay
+            loop
+            muted
+            playsinline
+          />
+        )
+      }
+      {
+        content.type === "url" && (
+          <iframe
+            src={content.src}
+            title="Hero External Content"
+            class="w-full h-full border-0 bg-bg-1"
+          />
+        )
+      }
+
+      {
+        (overlayText || targetLink) && (
+          <div class="absolute bottom-0 left-0 right-0 translate-y-full md:group-hover:translate-y-0 transition-transform duration-300 ease-out">
+            <div class="bg-bg-0/75 backdrop-blur-sm border-t border-bg-2 p-2 md:p-4  shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+              <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                {overlayText && (
+                  <p class="text-fg-0 text-sm md:text-base font-medium font-sans leading-snug ">
+                    {overlayText}
+                  </p>
+                )}
+
+                {targetLink && (
+                  <a
+                    href={targetLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex-shrink-0 whitespace-nowrap  px-6 py-2.5 bg-primary text-primary-fg  font-bold font-sans text-sm rounded-md shadow-sm hover:opacity-90 transition-opacity"
+                  >
+                    {buttonText}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      <div
+        class="md:hidden absolute bottom-0 left-0 right-0 bg-bg-0/90 border-t border-bg-2 p-4"
+      >
+        <div class="flex items-center justify-between gap-3">
+          {
+            overlayText && (
+              <p class="text-fg-0 text-xs font-medium truncate flex-1">
+                {overlayText}
+              </p>
+            )
+          }
+          {
+            targetLink && (
+              <a
+                href={targetLink}
+                target="_blank"
+                class="text-xs font-bold text-primary underline decoration-2 underline-offset-4"
+              >
+                {buttonText}
+              </a>
+            )
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

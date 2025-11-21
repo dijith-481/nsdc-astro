@@ -1,0 +1,109 @@
+---
+const navLinks = [
+  { name: "Home", href: "/" },
+  { name: "Events", href: "/#events" },
+  { name: "Projects", href: "/projects" },
+  { name: "Reports", href: "/reports" },
+  { name: "Resources", href: "/resources" },
+  { name: "Team", href: "/teams" },
+];
+---
+
+<header
+  class="fixed left-0 right-0 top-0 z-50 h-10 transition-all duration-300"
+>
+  <input type="checkbox" id="nav-toggle-state" class="hidden peer" />
+
+  <div
+    class="absolute inset-0 bg-bg-0/90 backdrop-blur-md border-b border-bg-2 z-10"
+  >
+  </div>
+
+  <label
+    for="nav-toggle-state"
+    class="fixed inset-0 z-20 hidden peer-checked:block cursor-default"
+    aria-hidden="true"></label>
+
+  <div
+    class="relative z-30 w-full h-full px-2 md:px-4 flex justify-between items-center pointer-events-none
+              peer-checked:[&_#mobile-menu]:visible
+              peer-checked:[&_#mobile-menu]:opacity-100
+              peer-checked:[&_#mobile-menu]:translate-y-0
+              peer-checked:[&_#icon-hamburger]:hidden
+              peer-checked:[&_#icon-close]:block"
+  >
+    <a
+      href="/"
+      class="flex items-center gap-2 cursor-pointer pointer-events-auto group"
+    >
+      <img src="/logo.png" alt="NSDC Logo" class="h-8 w-auto" />
+      <span class="font-bold text-fg-0 tracking-tight transition-colors">
+        NSDC MEC
+      </span>
+    </a>
+
+    <nav class="hidden md:flex items-center space-x-4 pointer-events-auto">
+      {
+        navLinks.map((link) => (
+          <a
+            href={link.href}
+            class="relative group text-sm font-medium font-sans text-fg-1 hover:text-fg-0 transition-colors duration-200"
+          >
+            <span>{link.name}</span>
+            <span class="absolute bottom-0 right-0 h-[1px] w-full bg-fg-0 transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-right" />
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="md:hidden relative pointer-events-auto">
+      <label
+        for="nav-toggle-state"
+        class="text-fg-1 hover:text-fg-0 cursor-pointer flex items-center p-1"
+        aria-label="Toggle menu"
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            id="icon-hamburger"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16m-7 6h7"></path>
+          <path
+            id="icon-close"
+            class="hidden"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </label>
+
+      <div
+        id="mobile-menu"
+        class="absolute right-0 top-11 w-max bg-bg-0 border border-bg-2 p-2 max-w-48 origin-top-right transition-all duration-200 ease-out
+               invisible opacity-0 pointer-events-auto"
+      >
+        <nav class="flex flex-col items-end space-y-1">
+          {
+            navLinks.map((link) => (
+              <a
+                href={link.href}
+                class="relative group text-sm font-bold font-sans text-fg-1 hover:text-fg-0 transition-colors block w-fit"
+              >
+                <span>{link.name}</span>
+                <span class="absolute bottom-0 right-0 h-[1px] w-full bg-fg-0 transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-right" />
+              </a>
+            ))
+          }
+        </nav>
+      </div>
+    </div>
+  </div>
+  lg
+</header>
