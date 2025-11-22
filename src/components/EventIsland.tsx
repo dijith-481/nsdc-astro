@@ -1,4 +1,12 @@
-import { createSignal, onMount, onCleanup, For, Show } from "solid-js";
+import {
+  createSignal,
+  onMount,
+  onCleanup,
+  For,
+  Show,
+  createMemo,
+  createEffect,
+} from "solid-js";
 import type { Event } from "../types";
 
 interface Props {
@@ -6,34 +14,50 @@ interface Props {
 }
 
 export default function EventsIsland(props: Props) {
-  const now = new Date();
-  const sortedEvents = () =>
-    [...props.events].sort(
+  const processedData = createMemo(() => {
+    const now = new Date();
+    const sorted = props.events.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
 
-  const activeEvents = () => sortedEvents().filter((e) => !e.isArchived);
-  const archivedEvents = () => sortedEvents().filter((e) => e.isArchived);
-  const upcomingGroup = () =>
-    activeEvents().filter((e) => new Date(e.date) >= now);
-  const recentGroup = () =>
-    activeEvents().filter((e) => new Date(e.date) < now);
+    const archived = sorted.filter((e) => e.isArchived);
+    const active = sorted.filter((e) => !e.isArchived);
+    const upcoming = active.filter((e) => new Date(e.date) >= now);
+    const recent = active.filter((e) => new Date(e.date) < now);
+    const sidebarList = [...upcoming, ...recent, ...archived];
 
-  const sidebarEvents = () => [
-    ...upcomingGroup(),
-    ...recentGroup(),
-    ...archivedEvents(),
-  ];
+    const recentStart = upcoming.length;
+    const archivedStart = upcoming.length + recent.length;
 
-  const [activeId, setActiveId] = createSignal<string>(
-    sidebarEvents()[0]?.id || "",
-  );
-  const [mobileTitle, setMobileTitle] = createSignal<string>(
-    sidebarEvents()[0]?.title || "",
-  );
+    return {
+      upcoming,
+      recent,
+      archived,
+      sidebarList,
+      offsets: {
+        recent: recentStart,
+        archived: archivedStart,
+      },
+    };
+  });
 
-  const [canScrollLeft, setCanScrollLeft] = createSignal(false);
-  const [canScrollRight, setCanScrollRight] = createSignal(true);
+  const [activeIndex, setActiveIndex] = createSignal(0);
+
+  const activeItem = () => processedData().sidebarList[activeIndex()];
+
+  const archiveStatus = createMemo(() => {
+    const current = activeIndex();
+    const { archived: archivedStart } = processedData().offsets;
+    const total = processedData().sidebarList.length;
+
+    const isArchiveActive = current >= archivedStart;
+
+    return {
+      isActive: isArchiveActive,
+      hasPrev: isArchiveActive && current > archivedStart,
+      hasNext: isArchiveActive && current < total - 1,
+    };
+  });
 
   let archiveContainerRef: HTMLDivElement | undefined;
   let mobileNavRef: HTMLDivElement | undefined;
@@ -42,164 +66,144 @@ export default function EventsIsland(props: Props) {
   let isProgrammaticScroll = false;
   let scrollTimeout: any = null;
 
-  const syncSidebar = (id: string) => {
+  createEffect((prevIndex: number | undefined) => {
+    const currentIdx = activeIndex();
+    const currentItem = processedData().sidebarList[currentIdx];
+
+    if (!currentItem) return currentIdx;
+
     if (mobileNavRef) {
-      const activeEl = mobileNavRef.querySelector(
-        `[data-target="${id}"]`,
+      const el = mobileNavRef.querySelector(
+        `[data-target="${currentItem.id}"]`,
       ) as HTMLElement;
-      if (activeEl) {
-        const containerCenter = mobileNavRef.clientWidth / 2;
-        const itemCenter = activeEl.offsetLeft + activeEl.offsetWidth / 2;
-        console.log("d");
-        mobileNavRef.scrollTo({
-          left: itemCenter - containerCenter,
-          behavior: "smooth",
-        });
+      if (el) {
+        const center =
+          el.offsetLeft + el.offsetWidth / 2 - mobileNavRef.clientWidth / 2;
+        mobileNavRef.scrollTo({ left: center, behavior: "smooth" });
       }
     }
 
     if (desktopNavRef) {
-      const activeEl = desktopNavRef.querySelector(
-        `[data-target="${id}"]`,
+      const el = desktopNavRef.querySelector(
+        `[data-target="${currentItem.id}"]`,
       ) as HTMLElement;
-      if (activeEl) {
-        const topPos = activeEl.offsetTop;
-        const containerHeight = desktopNavRef.clientHeight;
-        const elementHeight = activeEl.clientHeight;
-        const targetScroll = topPos - containerHeight / 2 + elementHeight / 2;
-
-        desktopNavRef.scrollTo({
-          top: targetScroll,
-          behavior: "smooth",
-        });
+      if (el) {
+        const center =
+          el.offsetTop - desktopNavRef.clientHeight / 2 + el.clientHeight / 2;
+        desktopNavRef.scrollTo({ top: center, behavior: "smooth" });
       }
     }
-  };
 
-  const updateButtonState = () => {
-    if (!archiveContainerRef) return;
-    const { scrollLeft, scrollWidth, clientWidth } = archiveContainerRef;
-    setCanScrollLeft(scrollLeft > 5);
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5);
-  };
+    if (isProgrammaticScroll) {
+      const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+      const { archived: archivedStart } = processedData().offsets;
 
-  const scrollArchive = (direction: "left" | "right") => {
-    if (!archiveContainerRef) return;
-    const scrollAmount = archiveContainerRef.clientWidth * 0.9;
+      const isArchive = currentIdx >= archivedStart;
+      const wasArchive =
+        prevIndex !== undefined ? prevIndex >= archivedStart : false;
 
-    archiveContainerRef.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
+      const shouldScrollVertical = !(isArchive && wasArchive);
 
-  const handleNavClick = (
-    e: MouseEvent,
-    targetId: string,
-    isArchiveItem: boolean,
-  ) => {
-    e.preventDefault();
-
-    isProgrammaticScroll = true;
-    if (scrollTimeout) clearTimeout(scrollTimeout);
-
-    scrollTimeout = setTimeout(() => {
-      isProgrammaticScroll = false;
-      setActiveId(targetId);
-    }, 1000);
-
-    setActiveId(targetId);
-
-    syncSidebar(targetId);
-
-    const targetItem = props.events.find((ev) => ev.id === targetId);
-    if (targetItem) setMobileTitle(targetItem.title);
-
-    if (window.matchMedia("(min-width: 768px)").matches) {
-      const el = document.getElementById(`event-${targetId}`);
-      if (el) {
-        const offset = 100;
-        const elementPosition = el.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - offset;
-        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-      }
-
-      if (isArchiveItem && archiveContainerRef) {
-        const targetEl = document.getElementById(`event-${targetId}`);
-        if (targetEl) {
-          const leftPos =
-            targetEl.offsetLeft -
-            (archiveContainerRef.clientWidth - targetEl.clientWidth) / 2;
-          archiveContainerRef.scrollTo({ left: leftPos, behavior: "smooth" });
-        }
-      }
-    } else {
-      if (isArchiveItem) {
-        const sectionEl = document.getElementById("past-events-section");
-        if (sectionEl) {
-          const offset = 180;
-          const elementPosition = sectionEl.getBoundingClientRect().top;
-          const offsetPosition = elementPosition + window.pageYOffset - offset;
-          window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-        }
-        if (archiveContainerRef) {
-          const targetEl = document.getElementById(`event-${targetId}`);
-          if (targetEl) {
-            const leftPos =
-              targetEl.offsetLeft -
-              (archiveContainerRef.clientWidth - targetEl.clientWidth) / 2;
-            archiveContainerRef.scrollTo({ left: leftPos, behavior: "smooth" });
+      if (shouldScrollVertical) {
+        if (isDesktop) {
+          const el = document.getElementById(`event-${currentItem.id}`);
+          if (el) {
+            const offset = isArchive ? 176 : 88;
+            const top =
+              el.getBoundingClientRect().top + window.pageYOffset - offset;
+            window.scrollTo({ top, behavior: "smooth" });
+          }
+        } else {
+          if (isArchive) {
+            const sectionEl = document.getElementById("past-events-section");
+            if (sectionEl) {
+              const offset = 178;
+              const top =
+                sectionEl.getBoundingClientRect().top +
+                window.pageYOffset -
+                offset;
+              window.scrollTo({ top, behavior: "smooth" });
+            }
+          } else {
+            const el = document.getElementById(`event-${currentItem.id}`);
+            if (el) {
+              const offset = 130;
+              const top =
+                el.getBoundingClientRect().top + window.pageYOffset - offset;
+              window.scrollTo({ top, behavior: "smooth" });
+            }
           }
         }
-      } else {
-        const el = document.getElementById(`event-${targetId}`);
-        if (el) {
-          const offset = 140;
-          const elementPosition = el.getBoundingClientRect().top;
-          const offsetPosition = elementPosition + window.pageYOffset - offset;
-          window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+      }
+
+      if (isArchive && archiveContainerRef) {
+        const targetEl = document.getElementById(`event-${currentItem.id}`);
+        if (targetEl) {
+          const left =
+            targetEl.offsetLeft -
+            (archiveContainerRef.clientWidth - targetEl.clientWidth) / 2;
+          archiveContainerRef.scrollTo({ left, behavior: "smooth" });
         }
       }
     }
+    return currentIdx;
+  });
+
+  const handleNavClick = (e: MouseEvent, index: number) => {
+    e.preventDefault();
+    isProgrammaticScroll = true;
+    if (scrollTimeout) clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      isProgrammaticScroll = false;
+    }, 1000);
+    setActiveIndex(index);
   };
 
-  const determineActiveArchiveItem = () => {
-    if (!archiveContainerRef) return null;
-    const containerCenter =
-      archiveContainerRef.scrollLeft + archiveContainerRef.clientWidth / 2;
-    let closestId = "";
-    let minDiff = Infinity;
-    let closestTitle = "";
+  const cycleArchive = (direction: -1 | 1) => {
+    const nextIndex = activeIndex() + direction;
+    const { sidebarList } = processedData();
 
-    const items = archiveContainerRef.children;
-    for (let i = 0; i < items.length; i++) {
-      const el = items[i] as HTMLElement;
+    if (nextIndex >= 0 && nextIndex < sidebarList.length) {
+      isProgrammaticScroll = true;
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        isProgrammaticScroll = false;
+      }, 1000);
+      setActiveIndex(nextIndex);
+    }
+  };
+
+  const getCenteredArchiveIndex = (container: HTMLDivElement): number => {
+    const center = container.scrollLeft + container.clientWidth / 2;
+    let closestIndex = -1;
+    let minDiff = Infinity;
+
+    for (let i = 0; i < container.children.length; i++) {
+      const el = container.children[i] as HTMLElement;
       const itemCenter = el.offsetLeft + el.offsetWidth / 2;
-      const diff = Math.abs(containerCenter - itemCenter);
+      const diff = Math.abs(center - itemCenter);
       if (diff < minDiff) {
         minDiff = diff;
-        closestId = el.getAttribute("data-id") || "";
-        closestTitle = el.getAttribute("data-title") || "";
+        closestIndex = parseInt(el.dataset.index || "-1");
       }
     }
-    return { id: closestId, title: closestTitle };
+    return closestIndex;
   };
 
   onMount(() => {
     const verticalObserver = new IntersectionObserver(
       (entries) => {
         if (isProgrammaticScroll) return;
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = entry.target.getAttribute("data-id");
-            const title = entry.target.getAttribute("data-title");
-            if (id) {
-              setActiveId(id);
-              syncSidebar(id);
-            }
-            if (title) setMobileTitle(title);
-          }
-        });
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (visible?.target) {
+          const idx = parseInt(
+            (visible.target as HTMLElement).dataset.index || "-1",
+          );
+          if (idx !== -1 && idx !== activeIndex()) setActiveIndex(idx);
+        }
       },
       { rootMargin: "-40% 0px -50% 0px" },
     );
@@ -212,47 +216,32 @@ export default function EventsIsland(props: Props) {
       (entries) => {
         if (isProgrammaticScroll) return;
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const active = determineActiveArchiveItem();
-            if (active && active.id) {
-              setActiveId(active.id);
-              setMobileTitle(active.title);
-              syncSidebar(active.id);
-            }
+          if (entry.isIntersecting && archiveContainerRef) {
+            const idx = getCenteredArchiveIndex(archiveContainerRef);
+            if (idx !== -1 && idx !== activeIndex()) setActiveIndex(idx);
           }
         });
       },
       { rootMargin: "-40% 0px -50% 0px" },
     );
-
     const archiveSection = document.getElementById("past-events-section");
     if (archiveSection) archiveSectionObserver.observe(archiveSection);
 
     const handleHorizontalScroll = () => {
-      if (!archiveContainerRef) return;
-      updateButtonState();
-      if (isProgrammaticScroll) return;
-
-      if (archiveSection) {
-        const rect = archiveSection.getBoundingClientRect();
-        const isVisible =
-          rect.top < window.innerHeight / 2 &&
-          rect.bottom > window.innerHeight / 2;
-        if (isVisible) {
-          const active = determineActiveArchiveItem();
-          if (active && active.id) {
-            setActiveId(active.id);
-            setMobileTitle(active.title);
-          }
-        }
+      if (isProgrammaticScroll || !archiveContainerRef || !archiveSection)
+        return;
+      const rect = archiveSection.getBoundingClientRect();
+      if (
+        rect.top < window.innerHeight / 2 &&
+        rect.bottom > window.innerHeight / 2
+      ) {
+        const idx = getCenteredArchiveIndex(archiveContainerRef);
+        if (idx !== -1 && idx !== activeIndex()) setActiveIndex(idx);
       }
     };
-
     archiveContainerRef?.addEventListener("scroll", handleHorizontalScroll, {
       passive: true,
     });
-    window.addEventListener("resize", updateButtonState);
-    updateButtonState();
 
     onCleanup(() => {
       verticalObserver.disconnect();
@@ -261,7 +250,6 @@ export default function EventsIsland(props: Props) {
         "scroll",
         handleHorizontalScroll,
       );
-      window.removeEventListener("resize", updateButtonState);
       if (scrollTimeout) clearTimeout(scrollTimeout);
     });
   });
@@ -285,17 +273,16 @@ export default function EventsIsland(props: Props) {
                 ref={mobileNavRef}
                 class="flex gap-1 h-full text-sm overflow-x-auto scrollbar-hide py-2 max-w-64"
               >
-                <For each={sidebarEvents()}>
+                <For each={processedData().sidebarList}>
                   {(item, index) => (
                     <a
                       href={`#event-${item.id}`}
                       data-target={item.id}
-                      onClick={(e) =>
-                        handleNavClick(e, item.id, !!item.isArchived)
-                      }
+                      onClick={(e) => handleNavClick(e, index())}
                       classList={{
-                        "bg-fg-0 text-bg-0 font-bold": activeId() === item.id,
-                        "text-fg-1 hover:text-fg-0": activeId() !== item.id,
+                        "bg-fg-0 text-bg-0 font-bold":
+                          activeIndex() === index(),
+                        "text-fg-1 hover:text-fg-0": activeIndex() !== index(),
                       }}
                       class="mobile-nav-item font-sans transition-colors duration-200 px-2 h full py-1 text-xs rounded-sm shrink-0"
                     >
@@ -305,11 +292,8 @@ export default function EventsIsland(props: Props) {
                 </For>
               </div>
               <div class="flex flex-col items-end text-right pl-2 overflow-hidden">
-                <h3
-                  id="mobile-event-title"
-                  class="font-semibold text-fg-0 truncate text-xs leading-tight w-full text-right"
-                >
-                  {mobileTitle()}
+                <h3 class="font-semibold text-fg-0 truncate text-xs leading-tight w-full text-right">
+                  {activeItem().title}
                 </h3>
               </div>
             </div>
@@ -317,108 +301,102 @@ export default function EventsIsland(props: Props) {
         </div>
 
         <div class="md:grid md:grid-cols-6 gap-8">
-          {/* --- DESKTOP SIDEBAR --- */}
-          <div class="hidden md:block">
-            <div
-              class="sticky top-24 overflow-y-auto scrollbar-hide max-h-[calc(100vh-100px)]"
-              ref={desktopNavRef}
-            >
-              <h1 class="text-4xl font-bold text-fg-0 mb-4 font-sans">
+          <div class="hidden md:block relative h-full">
+            <div class="sticky top-24 flex flex-col max-h-[calc(100vh-6rem)]">
+              <h1 class="text-4xl font-bold text-fg-0 mb-4 font-sans shrink-0">
                 EVENTS
               </h1>
-              <div class="flex flex-col gap-2">
-                <For
-                  each={[
-                    {
-                      title: "Upcoming",
-                      data: upcomingGroup(),
-                      color: "bg-primary",
-                    },
-                    { title: "Recent", data: recentGroup(), color: "bg-fg-1" },
-                    {
-                      title: "Past Events",
-                      data: archivedEvents(),
-                      color: "bg-bg-2 border border-fg-0",
-                      isArchive: true,
-                    },
-                  ]}
-                >
-                  {(group) => (
-                    <Show when={group.data.length > 0}>
-                      <div>
-                        <div class="flex items-center gap-2 mb-2 opacity-60">
-                          <span class={`w-1.5 h-1.5 ${group.color}`} />
-                          <h4 class="text-xs font-bold text-fg-1 uppercase tracking-wider">
-                            {group.title}
-                          </h4>
+              <div
+                ref={desktopNavRef}
+                class="flex-1 min-h-0 overflow-y-auto scrollbar-hide pb-4"
+              >
+                <div class="flex flex-col gap-2">
+                  <For
+                    each={[
+                      {
+                        title: "Upcoming",
+                        data: processedData().upcoming,
+                        offset: 0,
+                        color: "bg-primary",
+                      },
+                      {
+                        title: "Recent",
+                        data: processedData().recent,
+                        offset: processedData().offsets.recent,
+                        color: "bg-fg-1",
+                      },
+                      {
+                        title: "Past Events",
+                        data: processedData().archived,
+                        offset: processedData().offsets.archived,
+                        color: "bg-bg-2 border border-fg-0",
+                      },
+                    ]}
+                  >
+                    {(group) => (
+                      <Show when={group.data.length > 0}>
+                        <div>
+                          <div class="flex items-center gap-2 mb-2 opacity-60">
+                            <span class={`w-1.5 h-1.5 ${group.color}`} />
+                            <h4 class="text-xs font-bold text-fg-1 uppercase tracking-wider">
+                              {group.title}
+                            </h4>
+                          </div>
+                          <ul class="flex flex-col gap-1 border-l border-bg-2">
+                            <For each={group.data}>
+                              {(item, i) => {
+                                const globalIndex = group.offset + i();
+                                return (
+                                  <li>
+                                    <a
+                                      href={`#event-${item.id}`}
+                                      data-target={item.id}
+                                      onClick={(e) =>
+                                        handleNavClick(e, globalIndex)
+                                      }
+                                      classList={{
+                                        "border-fg-0 pl-6 font-bold":
+                                          activeIndex() === globalIndex,
+                                        "border-transparent pl-4 hover:border-fg-0/30":
+                                          activeIndex() !== globalIndex,
+                                      }}
+                                      class="desktop-nav-link block w-full truncate text-nowrap py-0.5 border-l-2 group transition-all duration-200"
+                                    >
+                                      <span
+                                        class={`nav-number font-mono text-[10px] transition-colors ${activeIndex() === globalIndex ? "text-fg-0 font-bold" : "text-fg-1 group-hover:text-fg-0"}`}
+                                      >
+                                        {String(globalIndex + 1).padStart(
+                                          2,
+                                          "0",
+                                        )}
+                                      </span>
+                                      <span
+                                        class={`nav-title text-xs font-medium transition-colors ml-2 ${activeIndex() === globalIndex ? "text-fg-0 font-bold" : "text-fg-1 group-hover:text-fg-0"}`}
+                                      >
+                                        {item.title}
+                                      </span>
+                                    </a>
+                                  </li>
+                                );
+                              }}
+                            </For>
+                          </ul>
                         </div>
-                        <ul class="flex flex-col gap-1 border-l border-bg-2">
-                          <For each={group.data}>
-                            {(item) => {
-                              const globalIndex = sidebarEvents().findIndex(
-                                (e) => e.id === item.id,
-                              );
-                              return (
-                                <li>
-                                  <a
-                                    href={`#event-${item.id}`}
-                                    data-target={item.id}
-                                    onClick={(e) =>
-                                      handleNavClick(
-                                        e,
-                                        item.id,
-                                        !!group.isArchive,
-                                      )
-                                    }
-                                    classList={{
-                                      "border-fg-0 pl-6 font-bold":
-                                        activeId() === item.id,
-                                      "border-transparent pl-4 hover:border-fg-0/30":
-                                        activeId() !== item.id,
-                                    }}
-                                    class="desktop-nav-link block w-full truncate text-nowrap py-0.5 border-l-2 group transition-all duration-200"
-                                  >
-                                    <span
-                                      classList={{
-                                        "text-fg-0 font-bold":
-                                          activeId() === item.id,
-                                        "text-fg-1": activeId() !== item.id,
-                                      }}
-                                      class="nav-number font-mono text-[10px] group-hover:text-fg-0 transition-colors"
-                                    >
-                                      {String(globalIndex + 1).padStart(2, "0")}
-                                    </span>
-                                    <span
-                                      classList={{
-                                        "text-fg-0 font-bold":
-                                          activeId() === item.id,
-                                        "text-fg-1": activeId() !== item.id,
-                                      }}
-                                      class="nav-title text-xs font-medium group-hover:text-fg-0 truncate transition-colors ml-2"
-                                    >
-                                      {item.title}
-                                    </span>
-                                  </a>
-                                </li>
-                              );
-                            }}
-                          </For>
-                        </ul>
-                      </div>
-                    </Show>
-                  )}
-                </For>
+                      </Show>
+                    )}
+                  </For>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* --- CONTENT AREA --- */}
-          <div class="md:col-span-5 md:mt-16 py-16 md:py-0 ">
+          <div class="md:col-span-5 md:mt-16 py-16 md:py-0">
             <div class="flex flex-col border-l border-r border-fg-0/20 gap-12">
-              {/* 1. VERTICAL LIST */}
-              <For each={[...upcomingGroup(), ...recentGroup()]}>
-                {(event) => {
-                  const isUpcoming = new Date(event.date) >= now;
+              <For
+                each={[...processedData().upcoming, ...processedData().recent]}
+              >
+                {(event, index) => {
+                  const isUpcoming = new Date(event.date) >= new Date();
                   const statusLabel = isUpcoming ? "Upcoming" : "Recent";
                   const statusColor = isUpcoming
                     ? "bg-primary text-primary-fg"
@@ -427,9 +405,7 @@ export default function EventsIsland(props: Props) {
                   return (
                     <div
                       id={`event-${event.id}`}
-                      data-id={event.id}
-                      data-title={event.title}
-                      data-status={statusLabel}
+                      data-index={index()}
                       class="vertical-event-section w-full border-b border-t border-fg-0/20 justify-center grid md:grid-cols-2 gap-4 grid-rows-7 md:grid-rows-1 scroll-mt-32 md:scroll-mt-8"
                     >
                       <div class="col-span-1 row-span-3 md:row-span-1">
@@ -482,8 +458,7 @@ export default function EventsIsland(props: Props) {
                 }}
               </For>
 
-              {/* 2. ARCHIVE SECTION */}
-              <Show when={archivedEvents().length > 0}>
+              <Show when={processedData().archived.length > 0}>
                 <div
                   id="past-events-section"
                   class="relative group/scroller h-full w-full scroll-mt-32 md:scroll-mt-8"
@@ -492,13 +467,11 @@ export default function EventsIsland(props: Props) {
                     <h2 class="mt-2 text-4xl sm:text-5xl font-serif font-medium text-fg-0">
                       Past Events
                     </h2>
-
                     <div class="flex items-center gap-1">
                       <button
-                        class="p-2 bg-bg-2 hover:bg-bg-2/80 text-fg-0 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                        aria-label="Scroll Left"
-                        disabled={!canScrollLeft()}
-                        onClick={() => scrollArchive("left")}
+                        class="p-2 bg-bg-2 hover:bg-bg-2/80 text-fg-0 transition-colors cursor-pointer disabled:opacity-30"
+                        disabled={!archiveStatus().hasPrev}
+                        onClick={() => cycleArchive(-1)}
                       >
                         <svg
                           class="w-6 h-6"
@@ -511,14 +484,13 @@ export default function EventsIsland(props: Props) {
                             stroke-linejoin="round"
                             stroke-width="1.5"
                             d="M15 19l-7-7 7-7"
-                          ></path>
+                          />
                         </svg>
                       </button>
                       <button
-                        class="p-2 bg-bg-2 hover:bg-bg-2/80 text-fg-0 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                        aria-label="Scroll Right"
-                        disabled={!canScrollRight()}
-                        onClick={() => scrollArchive("right")}
+                        class="p-2 bg-bg-2 hover:bg-bg-2/80 text-fg-0 transition-colors cursor-pointer disabled:opacity-30"
+                        disabled={!archiveStatus().hasNext}
+                        onClick={() => cycleArchive(1)}
                       >
                         <svg
                           class="w-6 h-6"
@@ -531,7 +503,7 @@ export default function EventsIsland(props: Props) {
                             stroke-linejoin="round"
                             stroke-width="1.5"
                             d="M9 5l7 7-7 7"
-                          ></path>
+                          />
                         </svg>
                       </button>
                     </div>
@@ -539,14 +511,13 @@ export default function EventsIsland(props: Props) {
 
                   <div
                     ref={archiveContainerRef}
-                    class="flex  flex-row overflow-x-auto snap-x snap-mandatory sm:gap-6 gap-[4vw] scrollbar-hide border-fg-0/20 border-t border-b"
+                    class="flex flex-row overflow-x-auto snap-x snap-mandatory sm:gap-6 gap-[4vw] scrollbar-hide border-fg-0/20 border-t border-b"
                   >
-                    <For each={archivedEvents()}>
-                      {(event) => (
+                    <For each={processedData().archived}>
+                      {(event, i) => (
                         <div
                           id={`event-${event.id}`}
-                          data-id={event.id}
-                          data-title={event.title}
+                          data-index={processedData().offsets.archived + i()}
                           class="snap-start shrink-0 w-[92vw] sm:max-w-172 border-l border-r border-fg-0/20"
                         >
                           <div class="grid grid-cols-1 sm:grid-cols-2 items-center h-full">
@@ -557,7 +528,6 @@ export default function EventsIsland(props: Props) {
                                 class="w-full h-full object-cover"
                               />
                             </div>
-
                             <div class="flex flex-col justify-between h-full p-2">
                               <div>
                                 <h3 class="text-3xl sm:text-4xl font-sans text-fg-0 font-semibold leading-tight">
@@ -576,7 +546,6 @@ export default function EventsIsland(props: Props) {
                                   </For>
                                 </div>
                               </div>
-
                               <div>
                                 <p class="text-fg-0 text-sm mb-4 font-sans line-clamp-3 leading-relaxed">
                                   {event.desc}
@@ -608,11 +577,7 @@ export default function EventsIsland(props: Props) {
           </div>
         </div>
       </div>
-
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
+      <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
     </section>
   );
 }
