@@ -9,9 +9,7 @@ const navLinks = [
 ];
 ---
 
-<header
-  class="fixed left-0 right-0 top-0 z-50 h-10 transition-all duration-300"
->
+<header class="w-full z-50 h-10 transition-all duration-300">
   <input type="checkbox" id="nav-toggle-state" class="hidden peer" />
 
   <div
@@ -47,7 +45,7 @@ const navLinks = [
         navLinks.map((link) => (
           <a
             href={link.href}
-            class="relative group text-sm font-medium font-sans text-fg-1 hover:text-fg-0 transition-colors duration-200"
+            class="relative group   font-medium font-sans text-fg-1 hover:text-fg-0 transition-colors duration-200"
           >
             <span>{link.name}</span>
             <span class="absolute bottom-0 right-0 h-[1px] w-full bg-fg-0 transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-left" />
@@ -95,7 +93,7 @@ const navLinks = [
               <a
                 href={link.href}
                 onclick="document.getElementById('nav-toggle-state').checked = false;"
-                class="relative group text-sm font-bold font-sans text-fg-1 hover:text-fg-0 transition-colors block w-fit"
+                class="relative group   font-bold font-sans text-fg-1 mx-4 hover:text-fg-0 transition-colors block w-fit"
               >
                 <span>{link.name}</span>
                 <span class="absolute bottom-0 right-0 h-[1px] w-full bg-fg-0 transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-left" />

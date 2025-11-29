@@ -31,9 +31,18 @@ const allYears = data.teams.map((t) => ({ id: t.id, title: t.title }));
             Our Team
           </h2>
 
+          {
+            allYears.map((y) => (
+              <a
+                id={`year-link-${y.id}`}
+                href={`/teams/${y.id}`}
+                class="hidden"
+              />
+            ))
+          }
           <div class="relative" transition:name="team-year-selector">
             <select
-              onchange="window.location.href='/teams/' + this.value"
+              onchange="document.getElementById('year-link-' + this.value).click()"
               class="appearance-none bg-bg-1 pl-4 pr-10 py-2 border border-bg-2 text-sm font-semibold text-fg-0 focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer hover:border-fg-1 transition-colors"
               aria-label="Select Team Year"
             >

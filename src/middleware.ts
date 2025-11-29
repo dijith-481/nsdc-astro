@@ -1,6 +1,8 @@
 import { defineMiddleware } from "astro:middleware";
 import { store } from "./lib/store";
 
+const isDev = process.env.USE_DEV === "true";
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const { request, url } = context;
   const pathname = url.pathname;
@@ -16,8 +18,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const cacheKey = pathname;
   const eTag = `"${cacheKey}-${store.lastFetched}"`;
 
-  if (request.headers.get("if-none-match") === eTag) {
-    console.log("etag");
+  if (request.headers.get("if-none-match") === eTag && !isDev) {
     return new Response(null, {
       status: 304,
       headers: {
@@ -29,9 +30,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const cachedContent = store.getCachedHtml(cacheKey);
 
-  if (cachedContent) {
+  if (cachedContent && !isDev) {
     if (cachedContent.startsWith("__REDIRECT__")) {
-      console.log("redirect");
       const [, status, location] = cachedContent.split("|");
       return new Response(null, {
         status: parseInt(status),
@@ -43,7 +43,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
         },
       });
     }
-    console.log("cache hit");
 
     return new Response(cachedContent, {
       status: 200,
@@ -57,7 +56,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   const response = await next();
-  console.log("miss");
 
   if (
     response.status === 200 &&

@@ -8,6 +8,8 @@ export interface ShortUrl {
 }
 
 class SiteStore {
+  private readonly MAX_CACHE_SIZE = 50;
+  public lastResetTime: number = 0;
   private siteData: MockData | null = null;
 
   private routeMap: Map<string, ShortUrl> = new Map();
@@ -40,13 +42,25 @@ class SiteStore {
   }
 
   public getCachedHtml(key: string): string | undefined {
-    return this.htmlCache.get(key);
+    const content = this.htmlCache.get(key);
+    if (content) {
+      this.htmlCache.delete(key);
+      this.htmlCache.set(key, content);
+    }
+    return content;
   }
 
   public setCachedHtml(key: string, html: string) {
-    if (this.siteData) {
-      this.htmlCache.set(key, html);
+    if (!this.siteData) return;
+
+    if (this.htmlCache.size >= this.MAX_CACHE_SIZE) {
+      const oldestKey = this.htmlCache.keys().next().value;
+      if (oldestKey) {
+        this.htmlCache.delete(oldestKey);
+      }
     }
+
+    this.htmlCache.set(key, html);
   }
 
   private async ensureData() {
@@ -65,9 +79,6 @@ class SiteStore {
   }
 
   private async performFetch() {
-    console.log(
-      `[Store] 🔄 Fetching fresh data (${process.env.USE_MOCK_DATA === "true" ? "MOCK" : "DB"})...`,
-    );
     const start = Date.now();
 
     const { siteData, routes } = await this.fetcher();

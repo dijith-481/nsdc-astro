@@ -50,7 +50,7 @@ export default function AnnouncementRotator(props: Props) {
     }
   };
 
-  const updateText = (newTitle: string) => {
+  const updateText = () => {
     setTextOpacity(0);
     setTimeout(() => {
       setCurrentIndex((prev) => (prev + 1) % props.announcements.length);
@@ -69,10 +69,7 @@ export default function AnnouncementRotator(props: Props) {
 
   const rotate = () => {
     if (expanded()) return;
-    updateText(
-      props.announcements[(currentIndex() + 1) % props.announcements.length]
-        .title,
-    );
+    updateText();
   };
 
   const startTimer = () => {
@@ -166,7 +163,7 @@ export default function AnnouncementRotator(props: Props) {
               </div>
             </div>
 
-            <div class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-bg-0/10 backdrop-blur-sm border border-fg-0/5 text-fg-0 z-20">
+            <div class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-bg-0/10 backdrop-blur-sm   text-fg-0 z-20">
               <svg
                 ref={arrowRef}
                 class="w-4 h-4 transition-transform duration-300"
