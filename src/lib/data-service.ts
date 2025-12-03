@@ -126,7 +126,7 @@ const loadFirestoreData = async () => {
   return { siteData, routes: dbRoutes as any[] };
 };
 
-const useMock = process.env.USE_MOCK_DATA === "true";
+const useMock = process.env.NODE_ENV === "development";
 console.log(useMock, "usemock");
 
 store.registerFetcher(useMock ? loadMockData : loadFirestoreData);

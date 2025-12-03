@@ -1,7 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { store } from "./lib/store";
 
-const isDev = process.env.USE_DEV === "true";
+const isDev = process.env.NODE_ENV === "development";
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { request, url } = context;
