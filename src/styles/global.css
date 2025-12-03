@@ -64,6 +64,13 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+html:active-view-transition {
+  scroll-behavior: auto;
+}
+
 body {
   background-color: var(--bg-0);
   color: var(--fg-0);
