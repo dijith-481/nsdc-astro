@@ -1,5 +1,5 @@
 ---
-import ThemeToggle from "./ThemeToggle.tsx";
+import ThemeToggle from "./ThemeToggle.astro";
 import type { LinkColumn } from "../types";
 
 interface Props {
@@ -74,7 +74,7 @@ allColumns.sort((a, b) => a.links.length - b.links.length);
     <div
       class="absolute bottom-4 left-4 md:left-8 md:bottom-8 flex flex-col space-y-4 items-center md:justify-center"
     >
-      <ThemeToggle client:load />
+      <ThemeToggle />
       <div class="text-sm text-fg-1 font-sans">
         &copy; {new Date().getFullYear()} NSDC MEC
       </div>
