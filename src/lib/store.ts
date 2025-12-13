@@ -8,7 +8,7 @@ export interface ShortUrl {
 }
 
 class SiteStore {
-  private readonly MAX_CACHE_SIZE = 50;
+  private readonly MAX_CACHE_SIZE = 200;
   public lastResetTime: number = 0;
   private siteData: MockData | null = null;
 
