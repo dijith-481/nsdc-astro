@@ -14,16 +14,74 @@ interface Props {
 }
 
 export default function EventsIsland(props: Props) {
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "TBA";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   const processedData = createMemo(() => {
-    const now = new Date();
-    const sorted = props.events.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    const now = new Date().getTime();
+
+    // Map events to include dynamic status and details check
+    const mappedEvents = props.events.map((e) => {
+      let status = e.status;
+      // Dynamic status override from hero_config
+      if (e.metadata?.hero_config) {
+        const start = new Date(e.metadata.hero_config.start_date).getTime();
+        const end = new Date(e.metadata.hero_config.end_date).getTime();
+        if (now < start) status = "upcoming";
+        else if (now >= start && now <= end) status = "ongoing";
+        else status = "past";
+      }
+
+      const meta = e.metadata || {};
+      const hasDetails = !!(
+        (meta.rounds && meta.rounds.length > 0) ||
+        (meta.prizes && meta.prizes.length > 0) ||
+        (meta.fees && meta.fees.length > 0) ||
+        (meta.contacts && meta.contacts.length > 0) ||
+        (meta.collaborators && meta.collaborators.length > 0)
+      );
+
+      return { ...e, status, hasDetails };
+    });
+
+    const sorted = mappedEvents.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    const archived = sorted.filter((e) => e.status === "past");
+    const active = sorted.filter((e) => e.status !== "past");
+
+    // Re-filter upcoming/recent based on dynamic status if possible,
+    // or strictly by date relative to now if status is generic?
+    // The previous logic used date comparison. Let's stick to date comparison for sorting/grouping
+    // but use the computed status for display/filtering 'past'.
+
+    const upcoming = active.filter(
+      (e) =>
+        e.status === "upcoming" ||
+        (e.status !== "recent" && e.date && new Date(e.date).getTime() >= now),
+    );
+    const recent = active.filter(
+      (e) =>
+        e.status === "recent" ||
+        (e.status !== "upcoming" && e.date && new Date(e.date).getTime() < now),
     );
 
-    const archived = sorted.filter((e) => e.isArchived);
-    const active = sorted.filter((e) => !e.isArchived);
-    const upcoming = active.filter((e) => new Date(e.date) >= now);
-    const recent = active.filter((e) => new Date(e.date) < now);
+    // De-dupe if logic overlaps (simple fallback: if in upcoming, don't put in recent)
+    // Actually simpler:
+    // Any active event that is 'upcoming' OR (not 'recent' AND future date) -> upcoming list
+    // Rest of active -> recent list
+
     const sidebarList = [...upcoming, ...recent, ...archived];
 
     const recentStart = upcoming.length;
@@ -43,7 +101,8 @@ export default function EventsIsland(props: Props) {
 
   const [activeIndex, setActiveIndex] = createSignal(0);
 
-  const activeItem = () => processedData().sidebarList[activeIndex()];
+  const activeItem = () =>
+    processedData().sidebarList[activeIndex()] || { title: "No Event", id: 0 };
 
   const archiveStatus = createMemo(() => {
     const current = activeIndex();
@@ -101,10 +160,8 @@ export default function EventsIsland(props: Props) {
       const isArchive = currentIdx >= archivedStart;
       const wasArchive =
         prevIndex !== undefined ? prevIndex >= archivedStart : false;
-      console.log(isArchive, wasArchive);
 
       const shouldScrollVertical = !(isArchive && wasArchive);
-      console.log({shouldScrollVertical})
 
       if (shouldScrollVertical) {
         if (isDesktop) {
@@ -396,63 +453,106 @@ export default function EventsIsland(props: Props) {
                 each={[...processedData().upcoming, ...processedData().recent]}
               >
                 {(event, index) => {
-                  const isUpcoming = new Date(event.date) >= new Date();
-                  const statusLabel = isUpcoming ? "Upcoming" : "Recent";
-                  const statusColor = isUpcoming
-                    ? "bg-primary text-primary-fg"
-                    : "bg-bg-2 text-fg-1";
+                  const statusLabel =
+                    event.status === "upcoming"
+                      ? "Upcoming"
+                      : event.status === "ongoing"
+                        ? "Ongoing"
+                        : "Recent";
+                  const statusColor =
+                    event.status === "upcoming"
+                      ? "bg-primary text-primary-fg"
+                      : event.status === "ongoing"
+                        ? "bg-red-500 text-white animate-pulse"
+                        : "bg-bg-2 text-fg-1";
 
                   return (
                     <div
                       id={`event-${event.id}`}
                       data-index={index()}
-                      class="vertical-event-section w-full border-b border-t border-fg-0/20 justify-center grid md:grid-cols-2 gap-4 grid-rows-7 md:grid-rows-1 scroll-mt-32 md:scroll-mt-8"
+                      class="vertical-event-section w-full border-b border-t border-fg-0/20 justify-center scroll-mt-32 md:scroll-mt-8"
                     >
-                      <div class="col-span-1 row-span-3 md:row-span-1">
-                        <img
-                          src={event.img}
-                          alt={event.title}
-                          class="w-full h-full max-h-72 md:max-h-full md:h-auto object-cover md:aspect-square bg-bg-2"
-                          loading="lazy"
-                        />
-                      </div>
-                      <div class="col-span-1 row-span-4 md:row-span-1 h-full flex flex-col justify-between py-0 px-2 md:px-0 pb-2 md:pb-4 md:py-4">
-                        <div>
+                      <Show
+                        when={!event.custom_html}
+                        fallback={
                           <div
-                            class={`w-max text-[0.6rem] font-bold uppercase tracking-widest mb-3 px-2 py-0.5 ${statusColor}`}
-                          >
-                            {statusLabel}
+                            innerHTML={event.custom_html || ""}
+                            class="w-full"
+                          />
+                        }
+                      >
+                        <div class="grid md:grid-cols-2 gap-4 grid-rows-7 md:grid-rows-1 h-full">
+                          <div class="col-span-1 row-span-3 md:row-span-1">
+                            <img
+                              src={event.image_url || ""}
+                              alt={event.title}
+                              class="w-full h-full max-h-72 md:max-h-full md:h-auto object-cover md:aspect-square bg-bg-2"
+                              loading="lazy"
+                            />
                           </div>
-                          <h2 class="text-4xl md:text-5xl lg:text-6xl leading-none font-bold text-fg-0 font-sans">
-                            {event.title}
-                          </h2>
-                          <p class="font-semibold text-fg-1 mt-3 mb-3 font-sans uppercase">
-                            {event.date}
-                          </p>
-                          <div class="flex flex-wrap gap-1 mb-4">
-                            <For each={event.tags}>
-                              {(tag) => (
-                                <span class="text-xs font-semibold bg-bg-2 text-fg-1 px-2 py-1 border border-bg-2">
-                                  {tag}
-                                </span>
+                          <div class="col-span-1 row-span-4 md:row-span-1 h-full flex flex-col justify-between py-0 px-2 md:px-0 pb-2 md:pb-4 md:py-4">
+                            <div>
+                              <div class="flex flex-wrap gap-2 mb-3">
+                                <div
+                                  class={`w-max text-[0.6rem] font-bold uppercase tracking-widest px-2 py-0.5 ${statusColor}`}
+                                >
+                                  {statusLabel}
+                                </div>
+                                {event.event_type && (
+                                  <span class="text-[0.6rem] font-bold uppercase tracking-widest bg-primary text-primary-fg px-2 py-0.5">
+                                    {event.event_type}
+                                  </span>
+                                )}
+                              </div>
+                              <h2 class="text-4xl md:text-5xl lg:text-6xl leading-none font-bold text-fg-0 font-sans mb-3">
+                                {event.title}
+                              </h2>
+                              <p class="font-semibold text-fg-1 mb-4 font-sans uppercase">
+                                {formatDate(event.date)}
+                              </p>
+                              {event.tags && (
+                                <div class="flex flex-wrap gap-1 mb-4">
+                                  <For each={event.tags}>
+                                    {(tag) => (
+                                      <span class="text-[10px] font-bold uppercase tracking-tight bg-bg-2 text-fg-1 px-2 py-0.5 border border-fg-0/5 rounded-sm">
+                                        {tag}
+                                      </span>
+                                    )}
+                                  </For>
+                                </div>
                               )}
-                            </For>
+                            </div>
+                            <div>
+                              <p class="text-fg-0 font-bold font-sans text-md leading-relaxed">
+                                {event.description}
+                              </p>
+                              <div class="mt-6">
+                                <Show
+                                  when={event.hasDetails}
+                                  fallback={
+                                    <Show when={event.link}>
+                                      <a
+                                        href={event.link || "#"}
+                                        target="_blank"
+                                        class="inline-block py-3 px-6 font-medium bg-primary text-primary-fg hover:opacity-90 transition-opacity"
+                                      >
+                                        {event.button_text || "Register Now"}
+                                      </a>
+                                    </Show>
+                                  }
+                                >
+                                  <a
+                                    href={`/event/${event.id}`}
+                                    class="inline-block py-3 px-6 font-medium bg-fg-0 text-bg-0 hover:opacity-90 transition-opacity"
+                                  >
+                                    {event.button_text || "View Details"}
+                                  </a>
+                                </Show>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div>
-                          <p class="text-fg-0 font-bold font-sans text-md leading-relaxed">
-                            {event.desc}
-                          </p>
-                          <Show when={event.link}>
-                            <a
-                              href={event.link}
-                              class="inline-block mt-6 py-3 px-6 font-medium bg-primary text-primary-fg hover:opacity-90 transition-opacity"
-                            >
-                              {event.buttonText || "Register Now"}
-                            </a>
-                          </Show>
-                        </div>
-                      </div>
+                      </Show>
                     </div>
                   );
                 }}
@@ -520,53 +620,88 @@ export default function EventsIsland(props: Props) {
                           data-index={processedData().offsets.archived + i()}
                           class="snap-start shrink-0 w-[92vw] sm:max-w-172 border-l border-r border-fg-0/20"
                         >
-                          <div class="grid grid-cols-1 sm:grid-cols-2 items-center h-full">
-                            <div class="h-full w-full overflow-hidden">
-                              <img
-                                src={event.img}
-                                alt={event.title}
-                                class="w-full h-full object-cover"
+                          <Show
+                            when={!event.custom_html}
+                            fallback={
+                              <div
+                                innerHTML={event.custom_html || ""}
+                                class="w-full h-full"
                               />
-                            </div>
-                            <div class="flex flex-col justify-between h-full p-2">
-                              <div>
-                                <h3 class="text-3xl sm:text-4xl font-sans text-fg-0 font-semibold leading-tight">
-                                  {event.title}
-                                </h3>
-                                <p class="text-sm font-bold text-fg-1 mt-1 mb-3 font-sans uppercase">
-                                  {event.date}
-                                </p>
-                                <div class="flex flex-wrap gap-1 mb-2">
-                                  <For each={event.tags}>
-                                    {(tag) => (
-                                      <span class="text-xs font-medium bg-bg-2 text-fg-1 px-1 py-0.5 border border-bg-2">
-                                        {tag}
-                                      </span>
+                            }
+                          >
+                            <div class="grid grid-cols-1 sm:grid-cols-2 items-center h-full">
+                              <div class="h-full w-full overflow-hidden">
+                                <img
+                                  src={event.image_url || ""}
+                                  alt={event.title}
+                                  class="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div class="flex flex-col justify-between h-full p-2">
+                                <div>
+                                  <h3 class="text-3xl sm:text-4xl font-sans text-fg-0 font-semibold leading-tight">
+                                    {event.title}
+                                  </h3>
+                                  <p class="text-sm font-bold text-fg-1 mt-1 mb-3 font-sans uppercase">
+                                    {formatDate(event.date)}
+                                  </p>
+                                    <div class="flex flex-wrap gap-1 mb-2">
+                                    {event.event_type && (
+                                        <span class="text-[10px] font-bold uppercase bg-primary text-primary-fg px-1.5 py-0.5">
+                                          {event.event_type}
+                                        </span>
                                     )}
-                                  </For>
+                                    {event.tags && (
+                                      <For each={event.tags}>
+                                        {(tag) => (
+                                          <span class="text-[10px] font-bold uppercase bg-bg-2 text-fg-1 px-1.5 py-0.5 border border-fg-0/5 rounded-sm">
+                                            {tag}
+                                          </span>
+                                        )}
+                                      </For>
+                                    )}
+                                  </div>
+                                </div>
+                                <div>
+                                  <p class="text-fg-0 text-sm mb-4 font-sans line-clamp-3 leading-relaxed">
+                                    {event.description}
+                                  </p>
+                                  <div class="flex gap-2">
+                                    <Show
+                                      when={event.hasDetails}
+                                      fallback={
+                                        <Show when={event.link}>
+                                          <a
+                                            href={event.link || "#"}
+                                            target="_blank"
+                                            class="inline-block py-1 px-2 text-sm font-bold bg-fg-0 text-bg-0/80 hover:bg-fg-0/80 hover:text-bg-0 transition-colors"
+                                          >
+                                            Visit
+                                          </a>
+                                        </Show>
+                                      }
+                                    >
+                                      <a
+                                        href={`/event/${event.id}`}
+                                        class="inline-block py-1 px-2 text-sm font-bold bg-fg-0 text-bg-0/80 hover:bg-fg-0/80 hover:text-bg-0 transition-colors"
+                                      >
+                                        View Details
+                                      </a>
+                                    </Show>
+
+                                    <Show when={event.report_url}>
+                                      <a
+                                        href={event.report_url || "#"}
+                                        class="inline-block py-1 px-2 text-sm font-bold bg-bg-2 text-fg-0/80 hover:bg-bg-2/80 hover:text-fg-0 transition-colors"
+                                      >
+                                        View Report
+                                      </a>
+                                    </Show>
+                                  </div>
                                 </div>
                               </div>
-                              <div>
-                                <p class="text-fg-0 text-sm mb-4 font-sans line-clamp-3 leading-relaxed">
-                                  {event.desc}
-                                </p>
-                                <Show when={event.link}>
-                                  <a
-                                    href={event.link}
-                                    class="inline-block py-1 px-2 mr-2 text-sm font-bold bg-fg-0 text-bg-0/80 hover:bg-fg-0/80 hover:text-bg-0 transition-colors"
-                                  >
-                                    {event.buttonText || "Visit"}
-                                  </a>
-                                </Show>
-                                <a
-                                  href={`/report/${event.relation}`}
-                                  class="inline-block py-1 px-2 text-sm font-bold bg-bg-2 text-fg-0/80 hover:bg-bg-2/80 hover:text-fg-0 transition-colors"
-                                >
-                                  View Report
-                                </a>
-                              </div>
                             </div>
-                          </div>
+                          </Show>
                         </div>
                       )}
                     </For>
@@ -581,3 +716,4 @@ export default function EventsIsland(props: Props) {
     </section>
   );
 }
+

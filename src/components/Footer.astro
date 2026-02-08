@@ -1,33 +1,28 @@
 ---
 import ThemeToggle from "./ThemeToggle.astro";
-import type { LinkColumn } from "../types";
+import type { Link } from "../types";
 
 interface Props {
-  links: LinkColumn[];
+  links: Link[];
 }
 
 const { links } = Astro.props;
 
-const staticLinkColumns: LinkColumn[] = [
-  {
-    title: "Connect",
-    links: [
-      { name: "LinkedIn", href: "https://www.linkedin.com/company/nsdc-mec/" },
-      { name: "Instagram", href: "https://www.instagram.com/nsdcmec/" },
-      { name: "GitHub", href: "https://github.com/nsdcmEC" },
-      { name: "Email", href: "mailto:nsdc@mec.ac.in" },
-    ],
-  },
-  {
-    title: "Resources",
-    links: [
-      { name: "NSDC Headquarters", href: "https://nebigdatahub.org/nsdc" },
-    ],
-  },
-];
+// Group links by their 'group' property
+const groups: Record<string, Link[]> = {};
+links.forEach((link) => {
+  if (link.position === 'footer') {
+    const group = link.group || "Other";
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(link);
+  }
+});
 
-const allColumns = [...staticLinkColumns, ...links];
-allColumns.sort((a, b) => a.links.length - b.links.length);
+// Convert to array for iteration
+const groupedLinks = Object.entries(groups).map(([title, items]) => ({
+  title,
+  links: items.sort((a, b) => a.priority - b.priority)
+})).sort((a, b) => b.links.length - a.links.length); // Sort columns by size
 ---
 
 <footer
@@ -45,7 +40,7 @@ allColumns.sort((a, b) => a.links.length - b.links.length);
     </div>
     <div class="flex flex-wrap justify-end gap-x-4 gap-y-12">
       {
-        allColumns.map((column) => (
+        groupedLinks.map((column) => (
           <div class="flex flex-col space-y-4 items-end w-max">
             <h3 class="font-semibold font-sans tracking-wider uppercase text-sm text-fg-0 text-right">
               {column.title}
@@ -53,13 +48,13 @@ allColumns.sort((a, b) => a.links.length - b.links.length);
             <div class="flex flex-col space-y-3 w-full items-end">
               {column.links.map((link) => (
                 <a
-                  href={link.href}
+                  href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   class="relative w-fit group text-fg-1 hover:text-fg-0 transition-colors duration-300 font-sans"
-                  title={link.desc}
+                  title={link.label}
                 >
-                  <span>{link.name}</span>
+                  <span>{link.label}</span>
                   <span class="absolute bottom-0 right-0 h-[1px] w-full bg-fg-0 transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-left" />
                 </a>
               ))}

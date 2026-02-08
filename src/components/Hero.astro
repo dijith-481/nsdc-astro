@@ -1,19 +1,16 @@
 ---
-import type { HeroContent, Announcement } from "../types";
+import type { HeroConfig, HeroMainConfig, Announcement, Event } from "../types";
 import Announcements from "./AnnouncementIsland";
-import HeroAnimation from "./HeroAnimation";
+import HeroVisuals from "./HeroVisuals";
 
 interface Props {
-  content: HeroContent;
+  config: HeroConfig;
+  main: HeroMainConfig;
   announcements: Announcement[];
+  heroEvents?: Event[]; // List of ALL potential hero events
 }
 
-const { content, announcements } = Astro.props;
-
-const contentType = content?.type || "animation";
-const targetLink = content.type === "url" ? content.src : content.href;
-const overlayText = content.desc;
-const buttonText = content.buttonText || "Learn More";
+const { config, main, announcements, heroEvents } = Astro.props;
 ---
 
 <section
@@ -31,17 +28,16 @@ const buttonText = content.buttonText || "Learn More";
         <h1
           class="text-6xl md:text-6xl font-extrabold tracking-tight text-fg-0 font-sans leading-[1.1]"
         >
-          National Students Data Corps
+          {config.title || "National Students Data Corps"}
         </h1>
         <h2 class="text-xl md:text-2xl text-fg-1 mt-1 font-serif">
-          MEC Chapter
+          {config.subtitle || "MEC Chapter"}
         </h2>
       </div>
       <p
         class="text-lg text-fg-1 mt-8 md:mt-4 md:mb-0 font-sans leading-relaxed"
       >
-        Bridging the gap between academic curriculum and industry demand in
-        data-centric careers.
+        {config.desc || "Bridging the gap between academic curriculum and industry demand in data-centric careers."}
       </p>
     </div>
 
@@ -51,92 +47,11 @@ const buttonText = content.buttonText || "Learn More";
         ,
       ]}
     >
-      {
-        contentType === "image" && content.src && (
-          <img
-            src={content.src}
-            loading="eager"
-            width="1024"
-            height="1024"
-            alt="Hero visual"
-            class="w-full h-full object-cover"
-          />
-        )
-      }
-      {
-        contentType === "video" && content.src && (
-          <video
-            src={content.src}
-            class="w-full h-full object-cover"
-            autoplay
-            loop
-            muted
-            playsinline
-          />
-        )
-      }
-      {
-        contentType === "url" && content.src && (
-          <iframe
-            src={content.src}
-            title="Hero External Content"
-            class="w-full h-full border-0 bg-bg-1"
-          />
-        )
-      }
-      {contentType === "animation" && <HeroAnimation client:load />}
-
-      {
-        (overlayText || targetLink) && (
-          <div class="absolute bottom-0 left-0 right-0 translate-y-full md:group-hover:translate-y-0 transition-transform duration-300 ease-out">
-            <div class="bg-bg-0/75 backdrop-blur-sm border-t border-bg-2 p-2 md:p-4  shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-              <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                {overlayText && (
-                  <p class="text-fg-0 text-sm md:text-base font-medium font-sans leading-snug ">
-                    {overlayText}
-                  </p>
-                )}
-
-                {targetLink && (
-                  <a
-                    href={targetLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="flex-shrink-0 whitespace-nowrap  px-6 py-2.5 bg-primary text-primary-fg  font-bold font-sans text-sm  shadow-sm hover:opacity-90 transition-opacity"
-                  >
-                    {buttonText}
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-      <div
-        class="md:hidden absolute bottom-0 left-0 right-0 bg-bg-0/90 border-t border-bg-2 p-4"
-      >
-        <div class="flex items-center justify-between gap-3">
-          {
-            overlayText && (
-              <p class="text-fg-0 text-xs font-medium truncate flex-1">
-                {overlayText}
-              </p>
-            )
-          }
-          {
-            targetLink && (
-              <a
-                href={targetLink}
-                target="_blank"
-                class="text-xs font-bold text-primary underline decoration-2 underline-offset-4"
-              >
-                {buttonText}
-              </a>
-            )
-          }
-        </div>
-      </div>
+      <HeroVisuals 
+        main={main} 
+        events={heroEvents || []} 
+        client:load 
+      />
     </div>
   </div>
 </section>

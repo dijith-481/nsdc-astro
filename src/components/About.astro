@@ -1,8 +1,8 @@
 ---
-import type { AboutContent } from "../types";
+import type { AboutConfig } from "../types";
 
 interface Props {
-  content: AboutContent;
+  content: AboutConfig;
 }
 
 const { content } = Astro.props;
@@ -17,7 +17,7 @@ const { content } = Astro.props;
             text-2xl py-2 bg-bg-0/75 backdrop-blur-sm w-full border-b md:border-none border-bg-2/50
             md:text-4xl md:bg-transparent md:sticky md:top-24 md:py-0"
         >
-          Our Mission
+          {content.title || "About Us"}
         </h2>
       </div>
 
@@ -29,8 +29,7 @@ const { content } = Astro.props;
                  text-base space-y-6
                  md:text-2xl md:space-y-10"
         >
-          <p>{content.title}</p>
-          {content.paragraphs.map((p) => <p>{p}</p>)}
+          <p>{content.desc}</p>
         </div>
       </div>
     </div>

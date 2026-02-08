@@ -8,6 +8,20 @@ interface Props {
 const { member } = Astro.props;
 
 const transitionName = `member-${member.name.replace(/\s+/g, "-").toLowerCase()}`;
+//TODO add instagram icon and twitter icon
+// maybe convert it to key value instead of 5 socials
+
+const socialOrder = ['linkedin', 'github', 'website', 'instagram', 'twitter'] as const;
+const availableLinks = socialOrder
+  .filter(key => member.social_links?.[key as keyof typeof member.social_links])
+  .slice(0, 2)
+  .map(key => ({
+    key,
+    url: member.social_links[key as keyof typeof member.social_links],
+    icon: key === 'linkedin' ? '/icons/linkedin.svg' : 
+          key === 'github' ? '/icons/github.svg' : 
+          '/globe.svg'
+  }));
 ---
 
 <div
@@ -19,7 +33,7 @@ const transitionName = `member-${member.name.replace(/\s+/g, "-").toLowerCase()}
     height="133"
     loading="lazy"
     class="aspect-[3/4] h-full object-cover flex-shrink-0 col-span-3"
-    src={member.img}
+    src={member.image_url}
     alt={member.name}
   />
   <div
@@ -29,45 +43,28 @@ const transitionName = `member-${member.name.replace(/\s+/g, "-").toLowerCase()}
       <h3 class="font-semibold text-fg-0 text-sm">{member.name}</h3>
     </div>
     <div>
-      <p class="text-xs text-fg-1">{member.title}</p>
+      <p class="text-xs text-fg-1">{member.position}</p>
 
       {
-        (member.linkedin || member.github) && (
+        availableLinks.length > 0 && (
           <div class="flex items-center gap-3 mt-2 ">
-            {member.linkedin && (
+            {availableLinks.map((link) => (
               <a
-                href={member.linkedin}
+                href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${member.name}'s LinkedIn Profile`}
+                aria-label={`${member.name}'s ${link.key}`}
                 class="text-fg-1 hover:text-fg-0 transition-colors bg-fg-0/20 p-1"
               >
                 <img
-                  src="/icons/linkedin.svg"
-                  alt="linkedin icon"
+                  src={link.icon}
+                  alt={`${link.key} icon`}
                   class="w-3.5 h-3.5"
                   loading="lazy"
                   decoding="async"
                 />
               </a>
-            )}
-            {member.github && (
-              <a
-                href={member.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${member.name}'s Github`}
-                class="text-fg-1 hover:text-fg-0 transition-colors bg-fg-0/5 hover:bg-fg-0/10 p-1.5 rounded-sm"
-              >
-                <img
-                  src="/icons/github.svg"
-                  alt=""
-                  class="w-3.5 h-3.5"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </a>
-            )}
+            ))}
           </div>
         )
       }

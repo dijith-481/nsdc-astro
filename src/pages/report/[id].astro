@@ -3,17 +3,21 @@ import Layout from "../../layouts/Layout.astro";
 import { dataService } from "../../lib/data-service";
 const { id } = Astro.params;
 const data = await dataService.getInitialData();
-const report = data.events.find((e) => e.id === id || e.relation === id);
+
+// Find by ID (id is string from params, e.id is number)
+const report = data.events.find((e) => e.id.toString() === id);
+
 if (!report) {
   return Astro.redirect("/404");
 }
-const formattedDate = new Date(report.date).toLocaleDateString("en-US", {
+
+const formattedDate = report.date ? new Date(report.date).toLocaleDateString("en-US", {
   year: "numeric",
   month: "long",
   day: "numeric",
-});
+}) : "N/A";
 ---
-<Layout title={report.title} links={data.links}>
+<Layout title={report.title} links={data.links} injections={data.config.injections}>
   <article
     class="bg-bg-0 min-h-[80vh] flex flex-col items-center py-12 md:py-20 transition-colors duration-300"
   >
@@ -40,11 +44,11 @@ const formattedDate = new Date(report.date).toLocaleDateString("en-US", {
       <header class="border-b border-bg-2 pb-8 mb-8">
         <div class="flex flex-wrap gap-3 mb-4">
           {
-            report.tags?.map((tag) => (
+            report.event_type && (
               <span class="text-xs font-mono font-semibold bg-bg-2 text-fg-1 px-2 py-1 rounded-sm uppercase tracking-wider">
-                {tag}
+                {report.event_type}
               </span>
-            ))
+            )
           }
         </div>
         <h1
@@ -59,23 +63,27 @@ const formattedDate = new Date(report.date).toLocaleDateString("en-US", {
       <figure
         class="mb-10 bg-bg-2 rounded-sm overflow-hidden shadow-sm border border-bg-2"
       >
-        <img
-          src={report.img}
-          alt={report.title}
-          class="w-full h-auto max-h-[500px] object-cover"
-        />
+        {report.image_url && (
+            <img
+              src={report.image_url}
+              alt={report.title}
+              class="w-full h-auto max-h-[500px] object-cover"
+            />
+        )}
       </figure>
       
       <div
         class="prose-content text-fg-0/90 font-sans text-lg leading-relaxed space-y-6"
       >
         {
-          report.desc.split("\n").map((paragraph) => {
-        if (!paragraph.trim()) return null;
+          report.description?.split("\n").map((paragraph) => {
+            if (!paragraph.trim()) return null;
             return <p>{paragraph}</p>;
           })
         }
       </div>
+
+      {report.custom_html && <div set:html={report.custom_html} />}
     </div>
   </article>
 </Layout>

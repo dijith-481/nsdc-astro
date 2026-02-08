@@ -1,43 +1,213 @@
+// 1. Announcements
 export interface Announcement {
-  id: string;
-  title: string;
+  id: number;
+  priority: number;
+  title: string | null;
+  date: string | null;
+  link: string | null;
+  description: string | null;
+}
+
+// 2. Events & Metadata
+export interface Collaborator {
+  name: string;
+  desc: string;
+  img: string;
   link?: string;
 }
 
-export interface HeroContent {
-  type: "image" | "video" | "url" | "animation";
-  src?: string;
-  href?: string;
+export interface Prize {
+  title: string;
+  reward: string;
+  priority: number;
+  position?: number;
   desc?: string;
-  buttonText?: string;
 }
 
-export interface AboutContent {
-  title: string;
-  paragraphs: string[];
-  image: string;
+export interface Round {
+  name: string;
+  desc: string;
+  priority: number;
+  format: "online" | "offline";
+  outcome?: string;
+  criteria?: string;
+  objective?: string;
+}
+
+export interface Contact {
+  name: string;
+  role?: string;
+  phone?: string;
+  email?: string;
+  priority: number;
+}
+
+export interface Fee {
+  label: string;
+  amount: string;
+  condition?: string;
+  is_active: boolean;
+}
+
+export interface BgConfig {
+  type: "image" | "html" | "iframe";
+  value: string; // URL or HTML string
+}
+
+export interface HeroStateConfig {
+  bg?: BgConfig;
+  link?: string;
+  hide_details?: boolean;
+}
+
+export interface HeroEventConfig {
+  start_date: string;
+  end_date: string;
+  show_in_hero: boolean;
+
+  // Timings (optional, default 0)
+  before?: number;
+  after?: number;
+
+  // Default/Fallback BG (required if no specific BG provided?)
+  bg_type?: "image" | "html" | "iframe";
+  bg_value?: string;
+
+  // State-specific Configurations
+  before_config?: HeroStateConfig;
+  ongoing_config?: HeroStateConfig;
+  after_config?: HeroStateConfig;
+}
+
+export interface EventMetadata {
+  collaborators?: Collaborator[];
+  prizes?: Prize[];
+  rounds?: Round[];
+  contacts?: Contact[];
+  fees?: Fee[];
+  hero_config?: HeroEventConfig;
 }
 
 export interface Event {
-  id: string;
-  relation: string;
-  date: string;
+  id: number;
   title: string;
-  desc: string;
-  img: string;
-  isArchived: boolean;
-  tags?: string[];
-  buttonText?: string;
-  link?: string;
+  description: string | null;
+  image_url: string | null;
+  date: string | null;
+  status: "upcoming" | "ongoing" | "recent" | "past";
+  venue: string | null;
+  event_type: string | null;
+  tags: string[];
+  link: string | null;
+  priority: number;
+  report_url: string | null;
+  custom_html: string | null;
+  button_text: string | null;
+  metadata: EventMetadata;
 }
 
-export interface Project {
-  id: string;
-  date: string;
+// 3. Team Members
+export interface SocialLinks {
+  linkedin?: string;
+  github?: string;
+  twitter?: string;
+  instagram?: string;
+  website?: string;
+}
+
+export interface TeamMember {
+  id: number;
+  name: string;
+  year: number;
+  position: string;
+  priority: number;
+  description: string | null;
+  image_url: string | null;
+  social_links: SocialLinks;
+}
+
+export interface TeamYear {
+  year: number;
+  members: TeamMember[];
+}
+
+export interface AboutConfig {
   title: string;
   desc: string;
-  img: string;
-  link?: string;
+}
+
+export interface HeroConfig {
+  title: string;
+  subtitle: string;
+  desc: string;
+}
+
+export interface HeroMainConfig {
+  type: "img" | "video" | "iframe";
+  src: string;
+  link: string;
+  buttontext: string;
+  desc: string;
+}
+
+export interface TeamMainConfig {
+  title: string;
+  subtitle: string;
+  src: string;
+  type: "img" | "video";
+}
+
+export interface SlotConfig {
+  html: string;
+  is_active: boolean;
+}
+
+export interface TopHtmlConfig extends SlotConfig {
+  should_close?: boolean;
+}
+
+export interface GlobalInjections {
+  top_html?: TopHtmlConfig | string;
+  hero_slot?: SlotConfig | string;
+  footer_slot?: SlotConfig | string;
+}
+
+export interface Link {
+  id: number;
+  label: string;
+  url: string;
+  position: "header" | "footer";
+  group: string | null;
+  priority: number;
+}
+
+export interface ShortUrl {
+  slug: string;
+  destination_url: string;
+  is_iframe: boolean;
+}
+
+export interface ResourceMetadata {
+  authors?: { name: string; link?: string }[];
+  doi?: string;
+  publishers?: { name: string; link?: string }[];
+  version?: string;
+  additional_html?: string;
+}
+
+export interface Resource {
+  id: number;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  link: string | null;
+  date: string | null;
+  priority: number;
+  resource_type: string;
+  status: "active" | "archived" | "upcoming";
+  tags: string[];
+  button_text?: string;
+  metadata: ResourceMetadata;
 }
 
 export interface Report {
@@ -49,54 +219,19 @@ export interface Report {
   img: string;
 }
 
-export interface Resource {
-  id: string;
-  title: string;
-  desc: string;
-  img: string;
-  link: string;
-}
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  title: string;
-  img: string;
-  linkedin?: string;
-  github?: string;
-  priority: number;
-}
-
-export interface TeamPreview {
-  type: "url";
-  src: string;
-}
-
-export interface TeamYear {
-  id: string;
-  title: string;
-  members: TeamMember[];
-}
-
-interface SubLink {
-  name: string;
-  href: string;
-  desc?: string;
-}
-
-export interface LinkColumn {
-  title: string;
-  links: SubLink[];
-}
-
-export interface MockData {
-  heroContent: HeroContent;
+export interface SiteData {
   announcements: Announcement[];
-  about: AboutContent;
   events: Event[];
-  projects: Project[];
-  resources: Resource[];
   teams: TeamYear[];
-  teamsPreview: TeamPreview;
-  links: LinkColumn[];
+  links: Link[];
+  shortLinks: ShortUrl[];
+  resources: Resource[];
+  config: {
+    about: AboutConfig;
+    hero: HeroConfig;
+    heroMain: HeroMainConfig;
+    teamMain: TeamMainConfig;
+    injections: GlobalInjections;
+    theme: string;
+  };
 }

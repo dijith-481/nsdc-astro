@@ -1,9 +1,11 @@
 ---
+import type { TeamMainConfig } from "../types";
+
 interface Props {
-  imageUrl: string;
+  config: TeamMainConfig;
 }
 
-const { imageUrl } = Astro.props;
+const { config } = Astro.props;
 ---
 
 <section class="py-16 lg:py-24 bg-bg-0">
@@ -11,21 +13,29 @@ const { imageUrl } = Astro.props;
     {
       (
         <div class="mb-8">
-          <p class="text-md font-semibold text-fg-0">NSDC Core</p>
+          <p class="text-md font-semibold text-fg-0">{config.subtitle || "NSDC Core"}</p>
           <h2 class="mt-2 text-4xl lg:text-5xl font-serif font-medium text-fg-0">
-            OUR TEAM
+            {config.title || "OUR TEAM"}
           </h2>
         </div>
       )
     }
     <div class="w-full overflow-hidden">
-      <img
-        src={imageUrl}
-        width={1024}
-        height={1024}
-        alt="A snapshot of the team working collaboratively"
-        class="w-full h-auto object-cover"
-      />
+      { config.type === 'video' ? (
+          <video
+            src={config.src}
+            autoplay loop muted playsinline
+            class="w-full h-auto object-cover"
+          />
+      ) : (
+          <img
+            src={config.src}
+            width={1024}
+            height={1024}
+            alt="Team Banner"
+            class="w-full h-auto object-cover"
+          />
+      )}
     </div>
     {
       (

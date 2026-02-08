@@ -1,16 +1,9 @@
-import type { MockData } from "../types";
-
-export interface ShortUrl {
-  slug: string;
-  destination: string;
-  type: "redirect" | "iframe";
-  title?: string;
-}
+import type { SiteData, ShortUrl } from "../types";
 
 class SiteStore {
   private readonly MAX_CACHE_SIZE = 200;
   public lastResetTime: number = 0;
-  private siteData: MockData | null = null;
+  private siteData: SiteData | null = null;
 
   private routeMap: Map<string, ShortUrl> = new Map();
 
@@ -20,18 +13,18 @@ class SiteStore {
 
   private fetchPromise: Promise<void> | null = null;
 
-  private fetcher: () => Promise<{ siteData: MockData; routes: ShortUrl[] }> =
+  private fetcher: () => Promise<{ siteData: SiteData; routes: ShortUrl[] }> =
     async () => {
       throw new Error("Fetcher not initialized");
     };
 
   public registerFetcher(
-    fn: () => Promise<{ siteData: MockData; routes: ShortUrl[] }>,
+    fn: () => Promise<{ siteData: SiteData; routes: ShortUrl[] }>,
   ) {
     this.fetcher = fn;
   }
 
-  public async getSiteData(): Promise<MockData> {
+  public async getSiteData(): Promise<SiteData> {
     await this.ensureData();
     return this.siteData!;
   }
@@ -84,7 +77,6 @@ class SiteStore {
     const { siteData, routes } = await this.fetcher();
 
     this.siteData = siteData;
-    console.log(routes);
 
     this.routeMap.clear();
     routes.forEach((r) => this.routeMap.set(r.slug, r));
@@ -107,3 +99,4 @@ class SiteStore {
 }
 
 export const store = new SiteStore();
+

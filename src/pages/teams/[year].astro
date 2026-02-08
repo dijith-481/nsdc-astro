@@ -5,21 +5,24 @@ import { dataService } from "../../lib/data-service";
 
 const data = await dataService.getInitialData();
 const { year } = Astro.params;
+const yearNum = parseInt(year || "0");
 
-const currentTeam = data.teams.find((t) => t.id === year);
+const currentTeam = data.teams.find((t) => t.year === yearNum);
+
 if (!currentTeam) {
-  const latest = data.teams[0]?.id;
+  const latest = data.teams[0]?.year;
   if (latest) return Astro.redirect(`/teams/${latest}`);
   return Astro.redirect("/404");
 }
+
 const sortedMembers = currentTeam.members.sort(
   (a, b) => a.priority - b.priority,
 );
 
-const allYears = data.teams.map((t) => ({ id: t.id, title: t.title }));
+const allYears = data.teams.map((t) => ({ id: t.year, title: t.year.toString() }));
 ---
 
-<Layout title={`${currentTeam.title} | NSDC MEC`} links={data.links}>
+<Layout title={`${currentTeam.year} Team | NSDC MEC`} links={data.links} injections={data.config.injections}>
   <div class="bg-bg-0 text-fg-0 transition-colors duration-300">
     <section class="py-16 lg:py-20">
       <div class="px-4 mb-8">
@@ -48,7 +51,7 @@ const allYears = data.teams.map((t) => ({ id: t.id, title: t.title }));
             >
               {
                 allYears.map((y) => (
-                  <option value={y.id} selected={y.id === year}>
+                  <option value={y.id} selected={y.id === yearNum}>
                     {y.title}
                   </option>
                 ))

@@ -2,7 +2,7 @@
 import { dataService } from "../../lib/data-service";
 
 const data = await dataService.getInitialData();
-const latestYear = data.teams[0]?.id;
+const latestYear = data.teams[0]?.year;
 
 if (latestYear) {
   return Astro.redirect(`/teams/${latestYear}`);

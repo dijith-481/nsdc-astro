@@ -16,11 +16,12 @@
     "@fontsource/crimson-pro": "^5.2.8",
     "@fontsource/quicksand": "^5.2.10",
     "astro": "^5.14.1",
-    "firebase-admin": "^13.6.0",
+    "pg": "^8.18.0",
     "solid-js": "^1.9.10"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.13",
+    "@types/pg": "^8.16.0",
     "prettier-plugin-astro": "^0.14.1",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.9.3"

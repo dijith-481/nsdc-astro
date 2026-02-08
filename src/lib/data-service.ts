@@ -1,126 +1,170 @@
-import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { pool } from "./db";
 import { store } from "./store";
-import fs from "node:fs/promises";
-import path from "node:path";
-import type { MockData, Event, Project, Announcement } from "../types";
-import { fetchCollection, fetchTeams, fetchShortUrls } from "./db-operations";
+import type {
+  SiteData,
+  Announcement,
+  Event,
+  TeamMember,
+  TeamYear,
+  Link,
+  ShortUrl,
+  AboutConfig,
+  HeroConfig,
+  HeroMainConfig,
+  TeamMainConfig,
+  GlobalInjections,
+  Resource,
+} from "../types";
 
 /* =========================================
-   HELPER: JSON READER (Used by both modes)
+   DB FETCHERS
    ========================================= */
-const readJson = async (filename: string) => {
+
+async function fetchAnnouncements(): Promise<Announcement[]> {
+  const res = await pool.query<Announcement>(
+    "SELECT * FROM club.announcements ORDER BY priority ASC",
+  );
+  return res.rows;
+}
+
+async function fetchEvents(): Promise<Event[]> {
+  const res = await pool.query<Event>(
+    "SELECT * FROM club.events ORDER BY priority ASC",
+  );
+  return res.rows;
+}
+
+async function fetchTeams(): Promise<TeamYear[]> {
+  const res = await pool.query<TeamMember>(
+    "SELECT * FROM club.teams ORDER BY year DESC, priority ASC",
+  );
+
+  // Group by Year
+  const map = new Map<number, TeamMember[]>();
+  for (const m of res.rows) {
+    const y = m.year;
+    if (!map.has(y)) map.set(y, []);
+    map.get(y)!.push(m);
+  }
+
+  const result: TeamYear[] = [];
+  // Sort years desc
+  const years = Array.from(map.keys()).sort((a, b) => b - a);
+  for (const year of years) {
+    result.push({ year, members: map.get(year)! });
+  }
+  return result;
+}
+
+async function fetchLinks(): Promise<Link[]> {
+  const res = await pool.query<Link>(
+    "SELECT * FROM club.links ORDER BY priority ASC",
+  );
+  return res.rows;
+}
+
+async function fetchShortLinks(): Promise<ShortUrl[]> {
+  const res = await pool.query<ShortUrl>("SELECT * FROM club.short_links");
+  return res.rows;
+}
+
+async function fetchResources(): Promise<Resource[]> {
+  const res = await pool.query<Resource>(
+    "SELECT * FROM club.resources ORDER BY priority ASC",
+  );
+  return res.rows;
+}
+
+async function fetchSiteConfig() {
+  const res = await pool.query<{ key: string; value: any }>(
+    "SELECT * FROM club.site_config",
+  );
+  const map = new Map<string, any>();
+  res.rows.forEach((r) => map.set(r.key, r.value));
+  return map;
+}
+
+/* =========================================
+   MAIN LOADER
+   ========================================= */
+
+const loadNeonData = async () => {
+  console.log("Loading data from Neon DB...");
+
   try {
-    const filePath = path.join(process.cwd(), "public", "mock-db", filename);
-    const fileContent = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(fileContent);
-  } catch (e) {
-    console.error(`Failed to load mock file: ${filename}`, e);
-    return null;
+    const [announcements, events, teams, links, shortLinks, resources, configMap] =
+      await Promise.all([
+        fetchAnnouncements(),
+        fetchEvents(),
+        fetchTeams(),
+        fetchLinks(),
+        fetchShortLinks(),
+        fetchResources(),
+        fetchSiteConfig(),
+      ]);
+
+    // Parse Configs
+    const about = (configMap.get("about") || {
+      title: "",
+      desc: "",
+    }) as AboutConfig;
+    const hero = (configMap.get("hero") || {
+      title: "",
+      subtitle: "",
+      desc: "",
+    }) as HeroConfig;
+    const heroMain = (configMap.get("hero-main") || {
+      type: "img",
+      src: "",
+      link: "",
+      buttontext: "",
+      desc: "",
+    }) as HeroMainConfig;
+    const teamMain = (configMap.get("team-main") || {
+      title: "",
+      subtitle: "",
+      src: "",
+      type: "img",
+    }) as TeamMainConfig;
+    const theme = (configMap.get("default-theme") || "system") as string;
+
+    // Explicitly cast or parse top_html.
+    // It comes from JSONB, so it should be the object already if stored as such.
+
+    const injections: GlobalInjections = {
+      top_html: configMap.get("top-html"),
+      hero_slot: configMap.get("hero-slot"),
+      footer_slot: configMap.get("footer-slot"),
+    };
+
+    const siteData: SiteData = {
+      announcements,
+      events,
+      teams,
+      links,
+      shortLinks,
+      resources,
+      config: {
+        about,
+        hero,
+        heroMain,
+        teamMain,
+        injections,
+        theme,
+      },
+    };
+
+    return { siteData, routes: shortLinks };
+  } catch (error) {
+    console.error("Failed to load data from Neon:", error);
+    throw error;
   }
 };
 
-/* =========================================
-   1. MOCK DATA LOADER (Pure File System)
-   ========================================= */
-const loadMockData = async () => {
-  console.log("Loading ALL data from filesystem...");
-  const [
-    hero,
-    about,
-    resources,
-    teamsPreview,
-    links,
-    announcements,
-    events,
-    projects,
-    teams,
-    routes,
-  ] = await Promise.all([
-    readJson("hero.json"),
-    readJson("about.json"),
-    readJson("resources.json"),
-    readJson("team-preview.json"),
-    readJson("links.json"),
-    readJson("announcements.json"),
-    readJson("events.json"),
-    readJson("projects.json"),
-    readJson("teams.json"),
-    readJson("routes.json"),
-  ]);
-
-  const siteData: MockData = {
-    heroContent: hero || {},
-    about: about || {},
-    resources: resources || [],
-    teamsPreview: teamsPreview || {},
-    links: links || [],
-    announcements: announcements || [],
-    events: events || [],
-    projects: projects || [],
-    teams: teams || [],
-  };
-
-  return { siteData, routes };
-};
-
-/* =========================================
-   2. HYBRID LOADER (Firestore + Mock Fallback)
-   ========================================= */
-const loadFirestoreData = async () => {
-  console.log("Loading HYBRID data (DB + Filesystem)...");
-
-  if (!getApps().length) {
-    const serviceAccount = JSON.parse(
-      process.env.FIREBASE_SERVICE_ACCOUNT || "{}",
-    );
-    initializeApp({ credential: cert(serviceAccount) });
-  }
-
-  const dbPromise = Promise.all([
-    fetchTeams(),
-    fetchCollection<Event>("events"),
-    fetchCollection<Project>("projects"),
-    fetchCollection<Announcement>("announcements"),
-    fetchShortUrls(),
-  ]);
-
-  //TODO add these data to db
-  const filePromise = Promise.all([
-    readJson("hero.json"),
-    readJson("about.json"),
-    readJson("resources.json"),
-    readJson("team-preview.json"),
-    readJson("links.json"),
-    readJson("routes.json"),
-  ]);
-
-  const [
-    [dbTeams, dbEvents, dbProjects, dbAnnouncements],
-    [hero, about, resources, teamsPreview, links, routes],
-  ] = await Promise.all([dbPromise, filePromise]);
-
-  const siteData: MockData = {
-    teams: dbTeams,
-    events: dbEvents,
-    projects: dbProjects,
-    announcements: dbAnnouncements,
-
-    heroContent: hero || {},
-    about: about || {},
-    resources: resources || [],
-    teamsPreview: teamsPreview || {},
-    links: links || [],
-  };
-
-  return { siteData, routes: routes as any[] };
-};
-
-const useMock = process.env.NODE_ENV === "development";
-console.log(useMock, "usemock");
-
-store.registerFetcher(useMock ? loadMockData : loadFirestoreData);
+store.registerFetcher(loadNeonData);
 
 export const dataService = {
   getInitialData: async () => store.getSiteData(),
   getRoute: async (slug: string) => store.getRoute(slug),
 };
+
