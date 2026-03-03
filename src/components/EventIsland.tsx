@@ -203,7 +203,7 @@ export default function EventsIsland(props: Props) {
             <input
               type="text"
               placeholder="Search events..."
-              class="bg-bg-1 border-2 border-fg-0/10 text-xs font-bold uppercase tracking-widest p-2 w-full outline-none focus:border-primary transition-colors text-fg-0 placeholder:text-fg-1/50"
+              class="bg-bg-1 border border-fg-0/10 text-xs font-bold uppercase tracking-widest p-2 w-full outline-none focus:border-primary transition-colors text-fg-0 placeholder:text-fg-1/50"
               value={searchQuery()}
               onInput={(e) => {
                 setSearchQuery(e.target.value);
@@ -212,7 +212,7 @@ export default function EventsIsland(props: Props) {
             />
             <div class="flex gap-2">
               <select
-                class="bg-bg-1 border-2 border-fg-0/10 text-xs font-bold uppercase p-2 flex-1 outline-none focus:border-primary appearance-none transition-colors text-fg-0"
+                class="bg-bg-1 border border-fg-0/10 text-xs font-bold uppercase p-2 flex-1 outline-none focus:border-primary appearance-none transition-colors text-fg-0"
                 value={filter()}
                 onChange={(e) => {
                   setFilter(e.target.value);
@@ -225,7 +225,7 @@ export default function EventsIsland(props: Props) {
                 <option value="past">Past</option>
               </select>
               <select
-                class="bg-bg-1 border-2 border-fg-0/10 text-xs font-bold uppercase p-2 flex-1 outline-none focus:border-primary appearance-none transition-colors text-fg-0"
+                class="bg-bg-1 border border-fg-0/10 text-xs font-bold uppercase p-2 flex-1 outline-none focus:border-primary appearance-none transition-colors text-fg-0"
                 value={sort()}
                 onChange={(e) => {
                   setSort(e.target.value);
@@ -250,10 +250,11 @@ export default function EventsIsland(props: Props) {
                 <a
                   data-nav={item.id}
                   onClick={(e) => handleNavClick(e, index())}
-                  class={`mobile-nav-item font-mono transition-colors duration-200 px-3 flex items-center justify-center text-[10px] border-2 text-nowrap shrink-0 cursor-pointer ${activeIndex() === index()
-                    ? "bg-fg-0 text-bg-0 border-fg-0 font-bold"
-                    : "bg-bg-0 text-fg-1 border-transparent hover:border-fg-0/30 hover:text-fg-0"
-                    }`}
+                  class={`mobile-nav-item font-mono transition-colors duration-200 px-3 flex items-center justify-center text-[10px] border text-nowrap shrink-0 cursor-pointer ${
+                    activeIndex() === index()
+                      ? "bg-fg-0 text-bg-0 border-fg-0 font-bold"
+                      : "bg-bg-0 text-fg-1 border-transparent hover:border-fg-0/30 hover:text-fg-0"
+                  }`}
                 >
                   {String(index() + 1).padStart(2, "0")}
                 </a>
@@ -292,7 +293,7 @@ export default function EventsIsland(props: Props) {
                     <input
                       type="text"
                       placeholder="Title, venue, tags..."
-                      class="bg-bg-0 border-2 border-fg-0 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all w-full placeholder:text-fg-1/40"
+                      class="bg-bg-0 border border-fg-0 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all w-full placeholder:text-fg-1/40"
                       value={searchQuery()}
                       onInput={(e) => {
                         setSearchQuery(e.target.value);
@@ -305,7 +306,7 @@ export default function EventsIsland(props: Props) {
                       Filter
                     </label>
                     <select
-                      class="bg-bg-0 border-2 border-fg-0 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer appearance-none"
+                      class="bg-bg-0 border border-fg-0 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer appearance-none"
                       value={filter()}
                       onChange={(e) => {
                         setFilter(e.target.value);
@@ -323,7 +324,7 @@ export default function EventsIsland(props: Props) {
                       Sort by
                     </label>
                     <select
-                      class="bg-bg-0 border-2 border-fg-0 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer appearance-none"
+                      class="bg-bg-0 border border-fg-0 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer appearance-none"
                       value={sort()}
                       onChange={(e) => {
                         setSort(e.target.value);
@@ -367,10 +368,11 @@ export default function EventsIsland(props: Props) {
                                         onClick={(e) =>
                                           handleNavClick(e, globalIndex)
                                         }
-                                        class={`desktop-nav-link flex items-center gap-3 py-1.5 pl-4 border-l-2 -ml-[2px] transition-all cursor-pointer group ${activeIndex() === globalIndex
-                                          ? "border-fg-0 font-bold text-fg-0 bg-bg-1"
-                                          : "border-transparent text-fg-1 hover:border-fg-0/30 hover:text-fg-0"
-                                          }`}
+                                        class={`desktop-nav-link flex items-center gap-3 py-1.5 pl-4 border-l-2 -ml-[2px] transition-all cursor-pointer group ${
+                                          activeIndex() === globalIndex
+                                            ? "border-fg-0 font-bold text-fg-0 bg-bg-1"
+                                            : "border-transparent text-fg-1 hover:border-fg-0/30 hover:text-fg-0"
+                                        }`}
                                       >
                                         <span
                                           class={`text-[9px] font-mono shrink-0 w-[20px] ${activeIndex() === globalIndex ? "text-primary" : "text-fg-1/40 group-hover:text-fg-1"}`}
@@ -440,9 +442,12 @@ export default function EventsIsland(props: Props) {
                             <For each={groupEvents()}>
                               {(event) => {
                                 const index = () =>
-                                  processedData().findIndex((e) => e.id === event.id);
+                                  processedData().findIndex(
+                                    (e) => e.id === event.id,
+                                  );
                                 const isPast = event.computedStatus === "past";
-                                const isUpcoming = event.computedStatus === "upcoming";
+                                const isUpcoming =
+                                  event.computedStatus === "upcoming";
 
                                 return (
                                   <div
@@ -450,16 +455,18 @@ export default function EventsIsland(props: Props) {
                                     id={`event-${event.id}`}
                                     data-index={index()}
                                   >
-                                      <Show when={event.image_url}>
-                                        <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-50 flex items-center justify-center">
-                                          <img
-                                            src={event.image_url as string}
-                                            class={`w-[150%] h-[150%] max-w-none object-cover blur-[60px] saturate-300 ${isUpcoming&&"animate-spin-slow"} rounded-full`}
-                                            alt=""
-                                          />
-                                        </div>
-                                      </Show>
-                                      <div class={`absolute inset-0 backdrop-blur-[30px] ${isUpcoming?"bg-bg-0/10":"bg-bg-0/70"} z-0 pointer-events-none`} />
+                                    <Show when={event.image_url}>
+                                      <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-50 flex items-center justify-center">
+                                        <img
+                                          src={event.image_url as string}
+                                          class={`w-[150%] h-[150%] max-w-none object-cover blur-[60px] saturate-300 ${isUpcoming && "animate-spin-slow"} rounded-full`}
+                                          alt=""
+                                        />
+                                      </div>
+                                    </Show>
+                                    <div
+                                      class={`absolute inset-0 backdrop-blur-[30px] ${isUpcoming ? "bg-bg-0/10" : "bg-bg-0/70"} z-0 pointer-events-none`}
+                                    />
                                     {/* Consistent 1:1 image area with grid md:grid-cols-2 for every card */}
                                     <div class="grid md:grid-cols-2 relative z-10">
                                       {/* Image Section */}
@@ -517,7 +524,8 @@ export default function EventsIsland(props: Props) {
                                             class="relative group text-xs font-bold uppercase tracking-widest text-fg-0 hover:text-primary transition-colors py-2"
                                           >
                                             <span>
-                                              {event.button_text || "View Details"}
+                                              {event.button_text ||
+                                                "View Details"}
                                             </span>
                                             <span class="absolute bottom-0 right-0 h-[2px] w-full bg-primary transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-left" />
                                           </a>
@@ -527,7 +535,9 @@ export default function EventsIsland(props: Props) {
                                               target="_blank"
                                               class="relative group text-xs font-bold uppercase tracking-widest text-fg-0 hover:text-primary transition-colors py-2"
                                             >
-                                              <span>{event.button_text || "Visit"}</span>
+                                              <span>
+                                                {event.button_text || "Visit"}
+                                              </span>
                                               <span class="absolute bottom-0 right-0 h-[2px] w-full bg-primary transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-left" />
                                             </a>
                                           </Show>
@@ -579,6 +589,6 @@ export default function EventsIsland(props: Props) {
           animation: spin 30s linear infinite;
         }
       `}</style>
-    </div >
+    </div>
   );
 }
