@@ -157,7 +157,7 @@ export default function TeamList(props: TeamListProps) {
                 <div class="relative w-full" ref={yearSelectorRef}>
                   <button
                     onClick={() => setIsYearOpen(!isYearOpen())}
-                    class="w-full flex items-center justify-between border-2 border-fg-0 px-4 py-2 hover:bg-fg-0 hover:text-bg-0 transition-colors uppercase font-mono font-bold"
+                    class="w-full flex items-center justify-between border border-fg-0/40 px-4 py-2 hover:bg-fg-0 hover:text-bg-0 cursor-pointer transition-colors uppercase font-mono font-bold"
                   >
                     <div class="flex flex-col items-start text-left">
                       <span class="text-[10px] tracking-[0.3em] opacity-60">
@@ -177,14 +177,14 @@ export default function TeamList(props: TeamListProps) {
                     </svg>
                   </button>
                   <Show when={isYearOpen()}>
-                    <div class="absolute left-0 top-full mt-[-2px] z-50 bg-bg-0 border-2 border-fg-0 w-full">
+                    <div class="absolute left-0 top-full mt-[-2px] z-50 bg-bg-0 border border-fg-0/40 w-full">
                       <For each={props.allYears}>
                         {(year) => (
                           <button
                             onClick={() =>
                               (window.location.href = `/teams/${year.id}`)
                             }
-                            class={`w-full px-6 py-4 text-left font-mono text-2xl border-b-2 border-fg-0 last:border-b-0 hover:bg-primary hover:text-primary-fg transition-colors ${year.id === props.currentYear ? "bg-fg-0 text-bg-0" : "text-fg-0"}`}
+                            class={`w-full px-6 py-4 text-left font-mono text-2xl border border-fg-0/40 cursor-pointer last:border-b-0 hover:bg-primary hover:text-primary-fg transition-colors ${year.id === props.currentYear ? "bg-fg-0 text-bg-0" : "text-fg-0"}`}
                           >
                             {year.title}
                           </button>
@@ -202,7 +202,7 @@ export default function TeamList(props: TeamListProps) {
                       {(role) => (
                         <button
                           onClick={() => setActiveRole(role)}
-                          class={`group flex items-center gap-3 py-2 pl-4 border-l-2 -ml-[2px] transition-all ${activeRole() === role ? "border-fg-0 font-bold text-fg-0" : "border-transparent text-fg-1 hover:border-fg-0/30 hover:text-fg-0"}`}
+                          class={`group flex items-center gap-3 py-2 pl-4 border-l-2 -ml-[2px] cursor-pointer transition-all ${activeRole() === role ? "border-fg-0 font-bold text-fg-0" : "border-transparent text-fg-1 hover:border-fg-0/30 hover:text-fg-0"}`}
                         >
                           <span
                             class={`text-xs uppercase tracking-widest ${activeRole() === role ? "text-fg-0" : "text-fg-1 group-hover:text-fg-0"}`}
@@ -253,7 +253,7 @@ export default function TeamList(props: TeamListProps) {
                                   ];
 
                             return (
-                              <div class="flex flex-col border-2 border-fg-0 p-6 bg-bg-0 rounded-none w-full sm:w-1/2 lg:w-1/3 max-w-[340px] sm:max-w-none -ml-[2px] -mt-[2px] box-border relative z-10">
+                              <div class="flex flex-col border border-fg-0/40 p-6 bg-bg-0 rounded-none w-full sm:w-1/2 lg:w-1/3 max-w-[340px] sm:max-w-none -ml-[2px] -mt-[2px] box-border relative z-10">
                                 <div class="aspect-[3/4] overflow-hidden bg-bg-1">
                                   <Show
                                     when={member.image_url}
