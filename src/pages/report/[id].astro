@@ -1,89 +1,146 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { dataService } from "../../lib/data-service";
+import { parseEventDate } from "../../lib/date-utils";
+
 const { id } = Astro.params;
 const data = await dataService.getInitialData();
 
-// Find by ID (id is string from params, e.id is number)
-const report = data.events.find((e) => e.id.toString() === id);
+// Find by ID
+const event = data.events.find((e) => e.id.toString() === id);
 
-if (!report) {
+if (!event || !event.report_url) {
   return Astro.redirect("/404");
 }
 
-const formattedDate = report.date ? new Date(report.date).toLocaleDateString("en-US", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-}) : "N/A";
+const formattedDate = (() => {
+  if (!event.date) return "TBA";
+  const ts = parseEventDate(event.date);
+  if (ts === 0) return event.date;
+  return new Date(ts).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+})();
+
+const meta = event.metadata || {};
 ---
-<Layout title={report.title} links={data.links} injections={data.config.injections}>
-  <article
-    class="bg-bg-0 min-h-[80vh] flex flex-col items-center py-12 md:py-20 transition-colors duration-300"
-  >
-    <div class="container max-w-3xl px-4 sm:px-6">
-      <div class="mb-8">
-        <a
-          href="/reports"
-          class="inline-flex items-center gap-2 text-sm font-bold text-fg-1 hover:text-primary transition-colors"
-        >
-          <svg
-            class="w-4 h-4 rotate-180"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            ><path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg
+
+<Layout
+  title={`Report: ${event.title}`}
+  links={data.links}
+  injections={data.config.injections}
+>
+  <div class="flex flex-col lg:flex-row min-h-screen bg-bg-0">
+    {/* Left Side: Info (Sticky) */}
+    <aside
+      class="w-full lg:w-[320px] xl:w-[400px] border-r-2 border-fg-0/10 lg:sticky lg:top-20 overflow-y-auto bg-bg-1 p-6 lg:p-10 space-y-10 shrink-0"
+    >
+      <div class="space-y-6">
+        <div class="flex flex-col gap-2">
+          <a
+            href="/reports"
+            class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-fg-1 hover:text-fg-0 transition-colors"
           >
-          Back to Reports
-        </a>
-      </div>
-      <header class="border-b border-bg-2 pb-8 mb-8">
-        <div class="flex flex-wrap gap-3 mb-4">
+            ← Back to Reports
+          </a>
+        </div>
+
+        <h1
+          class="text-3xl lg:text-4xl font-black uppercase tracking-tighter leading-[0.9] text-fg-0"
+        >
+          {event.title}
+          <span class="text-primary">Report</span>
+        </h1>
+
+        <div class="flex flex-col gap-4 border-l-2 border-fg-0 pl-4 py-1">
+          <div class="flex flex-col">
+            <span
+              class="text-[9px] font-mono font-bold text-fg-1 uppercase tracking-widest mb-1"
+              >Event Date</span
+            >
+            <span class="text-base font-bold text-fg-0 uppercase tracking-tight"
+              >{formattedDate}</span
+            >
+          </div>
+
           {
-            report.event_type && (
-              <span class="text-xs font-mono font-semibold bg-bg-2 text-fg-1 px-2 py-1 rounded-sm uppercase tracking-wider">
-                {report.event_type}
-              </span>
+            event.venue && (
+              <div class="flex flex-col">
+                <span class="text-[9px] font-mono font-bold text-fg-1 uppercase tracking-widest mb-1">
+                  Venue
+                </span>
+                <span class="text-base font-bold text-fg-0 uppercase tracking-tight">
+                  {event.venue}
+                </span>
+              </div>
             )
           }
         </div>
-        <h1
-          class="text-3xl md:text-5xl font-serif font-bold text-fg-0 leading-tight mb-4"
-        >
-          {report.title}
-        </h1>
-        <p class="text-sm font-mono text-fg-1 uppercase tracking-widest">
-          Published on {formattedDate}
-        </p>
-      </header>
-      <figure
-        class="mb-10 bg-bg-2 rounded-sm overflow-hidden shadow-sm border border-bg-2"
-      >
-        {report.image_url && (
-            <img
-              src={report.image_url}
-              alt={report.title}
-              class="w-full h-auto max-h-[500px] object-cover"
-            />
-        )}
-      </figure>
-      
-      <div
-        class="prose-content text-fg-0/90 font-sans text-lg leading-relaxed space-y-6"
-      >
+
+        <div class="pt-6 border-t-2 border-fg-0/10 space-y-4">
+          <div class="flex flex-col border-2 border-fg-0 p-5 bg-bg-0 shadow-sm">
+            <a
+              href={event.report_url}
+              download={`${event.title.replace(/\s+/g, "_")}_Report.pdf`}
+              target="_blank"
+              class="w-full py-4 text-center text-xs font-bold uppercase tracking-widest bg-primary text-primary-fg hover:bg-fg-0 hover:text-bg-0 transition-colors border-2 border-primary hover:border-fg-0 flex items-center justify-center gap-2"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                ></path>
+              </svg>
+              Download Report PDF
+            </a>
+          </div>
+        </div>
+
         {
-          report.description?.split("\n").map((paragraph) => {
-            if (!paragraph.trim()) return null;
-            return <p>{paragraph}</p>;
-          })
+          meta.contacts && meta.contacts.length > 0 && (
+            <div class="flex flex-col border-t-2 border-bg-2 pt-6">
+              <h3 class="text-[10px] font-bold uppercase tracking-widest text-fg-1 mb-4 border-b-2 border-bg-2 pb-2">
+                Organizers
+              </h3>
+              <div class="space-y-4">
+                {meta.contacts.map((contact) => (
+                  <div class="flex flex-col">
+                    <p class="font-bold uppercase tracking-tight text-xs text-fg-0">
+                      {contact.name}
+                    </p>
+                    {contact.role && (
+                      <p class="text-[9px] font-bold uppercase tracking-widest text-fg-1">
+                        {contact.role}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
         }
       </div>
+    </aside>
 
-      {report.custom_html && <div set:html={report.custom_html} />}
-    </div>
-  </article>
+    {/* Right Side: PDF Viewer */}
+    <main class="flex-grow p-4 bg-bg-2">
+      <div
+        class="w-full h-[100vh] bg-white border-2 border-fg-0 shadow-xl relative overflow-hidden"
+      >
+        <iframe
+          src={`${event.report_url}#view=FitH&toolbar=1&navpanes=0&scrollbar=1`}
+          class="w-full h-full border-none"
+          title={`${event.title} Report`}></iframe>
+      </div>
+    </main>
+  </div>
 </Layout>

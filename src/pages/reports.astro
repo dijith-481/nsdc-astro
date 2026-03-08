@@ -10,7 +10,7 @@ if (!data) {
 }
 
 const reports = data.events
-  .filter((e) => e.status === 'past')
+  .filter((e) => e.status === 'past' && e.report_url)
   .map((e) => ({
     id: e.id.toString(),
     relation: e.id.toString(), // Using id as fallback for relation

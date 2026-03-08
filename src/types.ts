@@ -146,7 +146,6 @@ export interface AboutConfig {
   cards: AboutCardConfig[];
 }
 
-
 export interface HeroConfig {
   title: string;
   subtitle: string;
@@ -221,15 +220,6 @@ export interface Resource {
   tags: string[];
   button_text?: string;
   metadata: ResourceMetadata;
-}
-
-export interface Report {
-  id: string;
-  relation: string;
-  date: string;
-  title: string;
-  desc: string;
-  img: string;
 }
 
 export interface SiteData {
