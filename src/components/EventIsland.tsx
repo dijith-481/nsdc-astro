@@ -9,9 +9,11 @@ import {
 } from "solid-js";
 import type { Event } from "../types";
 import { parseEventDate } from "../lib/date-utils";
+import Dropdown from "./ui/Dropdown";
 
 interface Props {
   events: Event[];
+  isMinimal?: boolean;
 }
 
 export default function EventsIsland(props: Props) {
@@ -61,19 +63,22 @@ export default function EventsIsland(props: Props) {
     });
 
     let filtered = mappedEvents;
-    if (filter() !== "all") {
-      filtered = mappedEvents.filter((e) => e.computedStatus === filter());
-    }
 
-    if (searchQuery().trim()) {
-      const q = searchQuery().trim().toLowerCase();
-      filtered = filtered.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.description?.toLowerCase().includes(q) ||
-          e.tags?.some((t) => t.toLowerCase().includes(q)) ||
-          e.venue?.toLowerCase().includes(q),
-      );
+    if (!props.isMinimal) {
+      if (filter() !== "all") {
+        filtered = mappedEvents.filter((e) => e.computedStatus === filter());
+      }
+
+      if (searchQuery().trim()) {
+        const q = searchQuery().trim().toLowerCase();
+        filtered = filtered.filter(
+          (e) =>
+            e.title.toLowerCase().includes(q) ||
+            e.description?.toLowerCase().includes(q) ||
+            e.tags?.some((t) => t.toLowerCase().includes(q)) ||
+            e.venue?.toLowerCase().includes(q),
+        );
+      }
     }
 
     const sorted = filtered.sort((a, b) => {
@@ -81,7 +86,13 @@ export default function EventsIsland(props: Props) {
       return a.ts - b.ts;
     });
 
-    return sorted;
+    return props.isMinimal ? sorted.slice(0, 2) : sorted;
+  });
+
+  const groupOrder = createMemo(() => {
+    return sort() === "newest"
+      ? ["upcoming", "recent", "past"]
+      : ["past", "recent", "upcoming"];
   });
 
   const activeItem = () =>
@@ -92,15 +103,16 @@ export default function EventsIsland(props: Props) {
   let desktopNavRef: HTMLDivElement | undefined;
   let mobileNavRef: HTMLDivElement | undefined;
 
-  createEffect((prevIdx: number | undefined) => {
+  createEffect(() => {
     const currentIdx = activeIndex();
     const currentItem = processedData()[currentIdx];
 
-    if (!currentItem) return currentIdx;
+    if (!currentItem && currentIdx !== processedData().length) return;
 
     if (mobileNavRef) {
+      const navId = currentItem ? currentItem.id : "view-all";
       const el = mobileNavRef.querySelector(
-        `[data-nav="${currentItem.id}"]`,
+        `[data-nav="${navId}"]`,
       ) as HTMLElement;
       if (el) {
         const center =
@@ -109,7 +121,7 @@ export default function EventsIsland(props: Props) {
       }
     }
 
-    if (desktopNavRef) {
+    if (desktopNavRef && currentItem) {
       const el = desktopNavRef.querySelector(
         `[data-nav="${currentItem.id}"]`,
       ) as HTMLElement;
@@ -121,7 +133,10 @@ export default function EventsIsland(props: Props) {
     }
 
     if (isProgrammaticScroll) {
-      const el = document.getElementById(`event-${currentItem.id}`);
+      const scrollId = currentItem
+        ? `event-${currentItem.id}`
+        : `event-view-all`;
+      const el = document.getElementById(scrollId);
       if (el) {
         const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
         let mobileOffset = 250;
@@ -135,8 +150,6 @@ export default function EventsIsland(props: Props) {
         window.scrollTo({ top, behavior: "smooth" });
       }
     }
-
-    return currentIdx;
   });
 
   const handleNavClick = (e: MouseEvent, index: number) => {
@@ -153,18 +166,28 @@ export default function EventsIsland(props: Props) {
     const verticalObserver = new IntersectionObserver(
       (entries) => {
         if (isProgrammaticScroll) return;
+
+        // Find the entry that is closest to the top of the viewport
         const visible = entries
           .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+          .sort((a, b) => {
+            // Priority given to entries that are more visible and closer to viewport top
+            return b.intersectionRatio - a.intersectionRatio;
+          })[0];
 
         if (visible?.target) {
           const idx = parseInt(
             (visible.target as HTMLElement).dataset.index || "-1",
           );
-          if (idx !== -1 && idx !== activeIndex()) setActiveIndex(idx);
+          if (idx !== -1 && idx !== activeIndex()) {
+            setActiveIndex(idx);
+          }
         }
       },
-      { rootMargin: "-30% 0px -40% 0px" },
+      {
+        threshold: [0, 0.1, 0.5, 1.0],
+        rootMargin: "-15% 0px -75% 0px",
+      },
     );
 
     let observedElements: Element[] = [];
@@ -179,67 +202,83 @@ export default function EventsIsland(props: Props) {
 
     observeElements();
 
-    // Quick hack to re-observe when solid renders new elements
     const interval = setInterval(observeElements, 1000);
-    onCleanup(() => clearInterval(interval));
+    onCleanup(() => {
+      clearInterval(interval);
+      verticalObserver.disconnect();
+    });
   });
 
+  const dropdownButtonClass =
+    "w-full flex items-center justify-between border border-fg-0/40 px-2 py-2 bg-bg-0 text-fg-0 text-xs font-bold uppercase tracking-widest hover:border-primary transition-colors cursor-pointer";
+  const dropdownMenuClass =
+    "absolute left-0 top-full mt-1 z-50 bg-bg-0 border border-fg-0/40 w-full shadow-xl text-[10px] font-bold uppercase tracking-widest";
+
   return (
-    <div class="bg-bg-0 md:pt-16 min-h-screen text-fg-0 font-sans">
+    <div
+      class={`bg-bg-0 md:pt-16 text-fg-0 font-sans ${props.isMinimal ? "min-h-0 py-12" : "min-h-screen"}`}
+    >
       {/* Mobile Sticky Header */}
       <div class="lg:hidden sticky top-8 z-40 bg-bg-0/95 backdrop-blur-md border-b-2 border-fg-0 flex flex-col shadow-sm">
         <div class="flex flex-col gap-3 p-4 border-b border-fg-0/10">
           <div class="flex justify-between items-center">
             <h1 class="text-2xl font-bold uppercase tracking-tighter">
-              Events
+              {props.isMinimal ? "Featured Events" : "Events"}
             </h1>
-            <span class="text-[10px] font-bold uppercase tracking-widest text-primary">
-              {processedData().length} Results
-            </span>
+            <Show when={!props.isMinimal}>
+              <span class="text-[10px] font-bold uppercase tracking-widest text-primary">
+                {processedData().length} Results
+              </span>
+            </Show>
           </div>
 
-          {/* Search & Filters */}
-          <div class="flex flex-col gap-2 relative z-50">
-            <input
-              type="text"
-              placeholder="Search events..."
-              class="bg-bg-1 border border-fg-0/10 text-xs font-bold uppercase tracking-widest p-2 w-full outline-none focus:border-primary transition-colors text-fg-0 placeholder:text-fg-1/50"
-              value={searchQuery()}
-              onInput={(e) => {
-                setSearchQuery(e.target.value);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-            />
-            <div class="flex gap-2">
-              <select
-                class="bg-bg-1 border border-fg-0/10 text-xs font-bold uppercase p-2 flex-1 outline-none focus:border-primary appearance-none transition-colors text-fg-0"
-                value={filter()}
-                onChange={(e) => {
-                  setFilter(e.target.value);
+          {/* Search & Filters - Hidden in Minimal Mode */}
+          <Show when={!props.isMinimal}>
+            <div class="flex flex-col gap-2 relative z-50">
+              <input
+                type="text"
+                placeholder="Search events..."
+                class="bg-bg-1 border border-fg-0/10 text-xs font-bold uppercase tracking-widest p-2 w-full outline-none focus:border-primary transition-colors text-fg-0 placeholder:text-fg-1/50"
+                value={searchQuery()}
+                onInput={(e) => {
+                  setSearchQuery(e.currentTarget.value);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-              >
-                <option value="all">All</option>
-                <option value="upcoming">Upcoming</option>
-                <option value="recent">Recent</option>
-                <option value="past">Past</option>
-              </select>
-              <select
-                class="bg-bg-1 border border-fg-0/10 text-xs font-bold uppercase p-2 flex-1 outline-none focus:border-primary appearance-none transition-colors text-fg-0"
-                value={sort()}
-                onChange={(e) => {
-                  setSort(e.target.value);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-              >
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-              </select>
+              />
+              <div class="flex gap-2">
+                <Dropdown
+                  options={[
+                    { id: "all", label: "All" },
+                    { id: "upcoming", label: "Upcoming" },
+                    { id: "recent", label: "Recent" },
+                    { id: "past", label: "Past" },
+                  ]}
+                  selectedId={filter()}
+                  onSelect={(id) => {
+                    setFilter(id as string);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  buttonClass={dropdownButtonClass}
+                  menuClass={dropdownMenuClass}
+                />
+                <Dropdown
+                  options={[
+                    { id: "newest", label: "Newest" },
+                    { id: "oldest", label: "Oldest" },
+                  ]}
+                  selectedId={sort()}
+                  onSelect={(id) => {
+                    setSort(id as string);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  buttonClass={dropdownButtonClass}
+                  menuClass={dropdownMenuClass}
+                />
+              </div>
             </div>
-          </div>
+          </Show>
         </div>
 
-        {/* Mobile Nav Scroll (spy index) */}
         <div class="flex justify-between items-center h-[48px] px-2 bg-bg-0 w-full relative z-40">
           <div
             ref={mobileNavRef}
@@ -260,15 +299,28 @@ export default function EventsIsland(props: Props) {
                 </a>
               )}
             </For>
-            <Show when={processedData().length === 0}>
-              <span class="text-[10px] font-bold uppercase text-fg-1 tracking-widest py-1 flex items-center">
-                No Events
-              </span>
+            <Show when={props.isMinimal}>
+              <a
+                href="/events"
+                data-nav="view-all"
+                onClick={(e) => handleNavClick(e, processedData().length)}
+                class={`mobile-nav-item font-mono transition-colors duration-200 px-3 flex items-center justify-center text-[10px] border shrink-0 cursor-pointer ${
+                  activeIndex() === processedData().length
+                    ? "bg-fg-0 text-bg-0 border-fg-0 font-bold"
+                    : "bg-bg-0 text-primary border-transparent hover:border-fg-0/30"
+                }`}
+              >
+                View All
+              </a>
             </Show>
           </div>
           <div class="flex flex-col items-end justify-center text-right pl-3 overflow-hidden flex-1 border-l border-fg-0/10 h-full">
             <h3 class="font-bold text-fg-0 uppercase tracking-tight truncate w-full text-right text-xl">
-              {processedData().length > 0 ? activeItem().title : ""}
+              {activeIndex() === processedData().length
+                ? "All Events"
+                : processedData().length > 0
+                  ? activeItem().title
+                  : ""}
             </h3>
           </div>
         </div>
@@ -280,78 +332,83 @@ export default function EventsIsland(props: Props) {
             {/* Desktop Sidebar */}
             <div class="hidden lg:block lg:col-span-3">
               <div class="sticky top-24 max-h-[calc(100vh-8rem)] flex flex-col">
-                <h1 class="text-4xl md:text-6xl font-bold text-fg-0 uppercase tracking-tighter leading-tight mb-8">
-                  Events
+                <h1 class="text-4xl md:text-5xl font-bold text-fg-0 uppercase tracking-tighter leading-tight mb-8">
+                  {props.isMinimal ? "Featured Events" : "Events"}
                 </h1>
 
-                {/* Search & Sort Area */}
-                <div class="flex flex-col gap-4 mb-6 border-b-2 border-fg-0/10 pb-6 pr-2">
-                  <div class="flex flex-col gap-1 w-full">
-                    <label class="text-[9px] font-bold uppercase tracking-[0.2em] text-fg-1">
-                      Search
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Title, venue, tags..."
-                      class="bg-bg-0 border border-fg-0/40 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:border focus:border-primary transition-all w-full placeholder:text-fg-1/40"
-                      value={searchQuery()}
-                      onInput={(e) => {
-                        setSearchQuery(e.target.value);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                    />
+                <Show when={!props.isMinimal}>
+                  <div class="flex flex-col gap-4 mb-6 border-b-2 border-fg-0/10 pb-6 pr-2">
+                    <div class="flex flex-col gap-1 w-full">
+                      <label class="text-[9px] font-bold uppercase tracking-[0.2em] text-fg-1">
+                        Search
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Title, venue, tags..."
+                        class="bg-bg-0 border border-fg-0/40 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:border focus:border-primary transition-all w-full placeholder:text-fg-1/40"
+                        value={searchQuery()}
+                        onInput={(e) => {
+                          setSearchQuery(e.currentTarget.value);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                      />
+                    </div>
+                    <div class="flex flex-col gap-1 w-full">
+                      <label class="text-[9px] font-bold uppercase tracking-[0.2em] text-fg-1">
+                        Filter
+                      </label>
+                      <Dropdown
+                        options={[
+                          { id: "all", label: "All Events" },
+                          { id: "upcoming", label: "Upcoming" },
+                          { id: "recent", label: "Recent" },
+                          { id: "past", label: "Past" },
+                        ]}
+                        selectedId={filter()}
+                        onSelect={(id) => {
+                          setFilter(id as string);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        buttonClass={dropdownButtonClass}
+                        menuClass={dropdownMenuClass}
+                      />
+                    </div>
+                    <div class="flex flex-col gap-1 w-full">
+                      <label class="text-[9px] font-bold uppercase tracking-[0.2em] text-fg-1">
+                        Sort by
+                      </label>
+                      <Dropdown
+                        options={[
+                          { id: "newest", label: "Newest First" },
+                          { id: "oldest", label: "Oldest First" },
+                        ]}
+                        selectedId={sort()}
+                        onSelect={(id) => {
+                          setSort(id as string);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        buttonClass={dropdownButtonClass}
+                        menuClass={dropdownMenuClass}
+                      />
+                    </div>
                   </div>
-                  <div class="flex flex-col gap-1 w-full">
-                    <label class="text-[9px] font-bold uppercase tracking-[0.2em] text-fg-1">
-                      Filter
-                    </label>
-                    <select
-                      class="bg-bg-0 border border-fg-0/40 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:border focus:border-primary transition-all cursor-pointer appearance-none"
-                      value={filter()}
-                      onChange={(e) => {
-                        setFilter(e.target.value);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                    >
-                      <option value="all">All Events</option>
-                      <option value="upcoming">Upcoming</option>
-                      <option value="recent">Recent</option>
-                      <option value="past">Past</option>
-                    </select>
-                  </div>
-                  <div class="flex flex-col gap-1 w-full">
-                    <label class="text-[9px] font-bold uppercase tracking-[0.2em] text-fg-1">
-                      Sort by
-                    </label>
-                    <select
-                      class="bg-bg-0 border-[1px] border-fg-0/40 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:border focus:border-primary transition-all cursor-pointer appearance-none"
-                      value={sort()}
-                      onChange={(e) => {
-                        setSort(e.target.value);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                    >
-                      <option value="newest">Newest First</option>
-                      <option value="oldest">Oldest First</option>
-                    </select>
-                  </div>
-                </div>
+                </Show>
 
-                {/* Sidebar Navigation grouped by status */}
                 <div
                   class="flex-1 overflow-y-auto scrollbar-hide pr-2 pb-8"
                   ref={desktopNavRef}
                 >
                   <ul class="flex flex-col gap-4 border-l-2 border-bg-2">
-                    <For each={["upcoming", "recent", "past"]}>
+                    <For each={groupOrder()}>
                       {(group) => {
-                        const items = () =>
+                        const items = createMemo(() =>
                           processedData()
                             .map((item, index) => ({
                               item,
                               globalIndex: index,
                             }))
-                            .filter((x) => x.item.computedStatus === group);
+                            .filter((x) => x.item.computedStatus === group),
+                        );
 
                         return (
                           <Show when={items().length > 0}>
@@ -370,7 +427,7 @@ export default function EventsIsland(props: Props) {
                                         }
                                         class={`desktop-nav-link flex items-center gap-3 py-1.5 pl-4 border-l-2 -ml-[2px] transition-all cursor-pointer group ${
                                           activeIndex() === globalIndex
-                                            ? "border-fg-0 font-bold text-fg-0 bg-bg-1"
+                                            ? "border-fg-0 font-bold text-fg-0"
                                             : "border-transparent text-fg-1 hover:border-fg-0/30 hover:text-fg-0"
                                         }`}
                                       >
@@ -397,54 +454,61 @@ export default function EventsIsland(props: Props) {
                         );
                       }}
                     </For>
-                    <Show when={processedData().length === 0}>
-                      <li class="pl-4 py-2 text-xs font-bold uppercase tracking-widest text-fg-1">
-                        No items match criteria
-                      </li>
-                    </Show>
                   </ul>
                 </div>
+
+                <Show when={props.isMinimal}>
+                  <div class="pt-6 border-t-2 border-fg-0/10">
+                    <a
+                      href="/events"
+                      class="relative group w-max inline-block font-bold font-sans text-fg-1 hover:text-fg-0 transition-colors duration-200 text-xs uppercase tracking-widest"
+                    >
+                      <span>View All Events</span>
+                      <span class="absolute bottom-0 right-0 h-[1px] w-full bg-fg-0 transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-left" />
+                    </a>
+                  </div>
+                </Show>
               </div>
             </div>
 
             {/* Main Content Area */}
             <div class="lg:col-span-9 flex flex-col min-h-[50vh]">
-              <div class="w-full flex justify-between items-center mb-6 pt-2 md:pt-0">
-                <p class="text-[10px] font-mono font-bold uppercase tracking-widest text-fg-1">
-                  Showing {processedData().length} results
-                </p>
-                <Show when={filter() !== "all"}>
-                  <span class="text-[10px] font-bold uppercase bg-fg-0 text-bg-0 px-2 py-1 tracking-widest">
-                    {filter()}
-                  </span>
-                </Show>
-              </div>
+              <Show when={!props.isMinimal}>
+                <div class="w-full flex justify-between items-center mb-6 pt-2 md:pt-0">
+                  <p class="text-[10px] font-mono font-bold uppercase tracking-widest text-fg-1">
+                    Showing {processedData().length} results
+                  </p>
+                </div>
+              </Show>
 
-              <div class="flex flex-col  ">
-                <For each={["upcoming", "recent", "past"]}>
+              <div class="flex flex-col">
+                <For each={groupOrder()}>
                   {(group) => {
-                    const groupEvents = () =>
-                      processedData().filter((e) => e.computedStatus === group);
+                    const groupEvents = createMemo(() =>
+                      processedData().filter((e) => e.computedStatus === group),
+                    );
 
                     return (
                       <Show when={groupEvents().length > 0}>
                         <div class="flex flex-col gap-6">
-                          {/* Sticky Header for Group */}
-                          <div class="sticky top-[180px] lg:top-10 z-30 bg-bg-0 py-2 ">
-                            <div class="flex items-center gap-4 border-b-2 border-fg-0/10">
-                              <h2 class="text-2xl font-bold uppercase tracking-widest text-fg-0 pb-2">
-                                {group}
-                              </h2>
+                          <Show when={!props.isMinimal}>
+                            <div class="sticky top-[180px] lg:top-10 z-30 bg-bg-0 py-2">
+                              <div class="flex items-center gap-4 border-b-2 border-fg-0/10">
+                                <h2 class="text-2xl font-bold uppercase tracking-widest text-fg-0 pb-2">
+                                  {group}
+                                </h2>
+                              </div>
                             </div>
-                          </div>
+                          </Show>
 
-                          <div class="flex flex-col ">
+                          <div class="flex flex-col">
                             <For each={groupEvents()}>
                               {(event) => {
-                                const index = () =>
+                                const index = createMemo(() =>
                                   processedData().findIndex(
                                     (e) => e.id === event.id,
-                                  );
+                                  ),
+                                );
                                 const isPast = event.computedStatus === "past";
                                 const isUpcoming =
                                   event.computedStatus === "upcoming";
@@ -467,9 +531,7 @@ export default function EventsIsland(props: Props) {
                                     <div
                                       class={`absolute inset-0 backdrop-blur-[30px] ${isUpcoming ? "bg-bg-0/10" : "bg-bg-0/70"} z-0 pointer-events-none`}
                                     />
-                                    {/* Consistent 1:1 image area with grid md:grid-cols-2 for every card */}
                                     <div class="grid md:grid-cols-2 relative z-10">
-                                      {/* Image Section */}
                                       <div class="p-4 md:pr-0 overflow-hidden aspect-square">
                                         <Show
                                           when={event.image_url}
@@ -487,7 +549,6 @@ export default function EventsIsland(props: Props) {
                                         </Show>
                                       </div>
 
-                                      {/* Content Section */}
                                       <div class="flex flex-col p-6">
                                         <div class="flex items-center gap-3 mb-6 flex-wrap">
                                           <span
@@ -529,22 +590,9 @@ export default function EventsIsland(props: Props) {
                                             </span>
                                             <span class="absolute bottom-0 right-0 h-[2px] w-full bg-primary transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-left" />
                                           </a>
-                                          <Show when={event.link}>
-                                            <a
-                                              href={event.link || "#"}
-                                              target="_blank"
-                                              class="relative group text-xs font-bold uppercase tracking-widest text-fg-0 hover:text-primary transition-colors py-2"
-                                            >
-                                              <span>
-                                                {event.button_text || "Visit"}
-                                              </span>
-                                              <span class="absolute bottom-0 right-0 h-[2px] w-full bg-primary transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-left" />
-                                            </a>
-                                          </Show>
-
                                           <Show when={event.report_url}>
                                             <a
-                                              href={event.report_url || "#"}
+                                              href={`/report/${event.id}`}
                                               class="relative group text-xs font-bold uppercase tracking-widest text-fg-1 hover:text-fg-0 transition-colors py-2 pl-4 border-l-2 border-bg-2"
                                             >
                                               <span>Read Report</span>
@@ -558,6 +606,43 @@ export default function EventsIsland(props: Props) {
                                 );
                               }}
                             </For>
+
+                            {/* Custom View All Card for Minimal Mode */}
+                            <Show
+                              when={
+                                props.isMinimal &&
+                                group === groupOrder()[groupOrder().length - 1]
+                              }
+                            >
+                              <a
+                                id="event-view-all"
+                                data-index={processedData().length}
+                                href="/events"
+                                class="event-section-item flex flex-col items-center justify-center w-full h-32 md:h-40 bg-primary text-primary-fg hover:bg-fg-0 transition-colors mb-8 rounded-sm shadow-lg shadow-primary/10 group px-4 relative z-10"
+                              >
+                                <span class="text-xl md:text-2xl font-black uppercase tracking-widest text-center">
+                                  View All Events
+                                </span>
+                                <div class="flex items-center gap-2 mt-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                                  <span class="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] text-center">
+                                    Explore all events conducted by NSDC
+                                  </span>
+                                  <svg
+                                    class="w-4 h-4 md:w-5 md:h-5 transition-transform duration-300 group-hover:translate-x-2 shrink-0"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2.5"
+                                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                                    />
+                                  </svg>
+                                </div>
+                              </a>
+                            </Show>
                           </div>
                         </div>
                       </Show>
@@ -565,7 +650,7 @@ export default function EventsIsland(props: Props) {
                   }}
                 </For>
 
-                <Show when={processedData().length === 0}>
+                <Show when={processedData().length === 0 && !props.isMinimal}>
                   <div class="w-full flex items-center justify-center p-12 border-2 border-fg-0 bg-bg-1">
                     <p class="font-bold uppercase tracking-widest text-fg-1">
                       No events found matching your filter.
