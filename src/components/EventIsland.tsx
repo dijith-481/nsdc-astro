@@ -293,7 +293,7 @@ export default function EventsIsland(props: Props) {
                     <input
                       type="text"
                       placeholder="Title, venue, tags..."
-                      class="bg-bg-0 border border-fg-0 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all w-full placeholder:text-fg-1/40"
+                      class="bg-bg-0 border border-fg-0/40 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:border focus:border-primary transition-all w-full placeholder:text-fg-1/40"
                       value={searchQuery()}
                       onInput={(e) => {
                         setSearchQuery(e.target.value);
@@ -306,7 +306,7 @@ export default function EventsIsland(props: Props) {
                       Filter
                     </label>
                     <select
-                      class="bg-bg-0 border border-fg-0 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer appearance-none"
+                      class="bg-bg-0 border border-fg-0/40 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:border focus:border-primary transition-all cursor-pointer appearance-none"
                       value={filter()}
                       onChange={(e) => {
                         setFilter(e.target.value);
@@ -324,7 +324,7 @@ export default function EventsIsland(props: Props) {
                       Sort by
                     </label>
                     <select
-                      class="bg-bg-0 border border-fg-0 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer appearance-none"
+                      class="bg-bg-0 border-[1px] border-fg-0/40 text-xs font-bold uppercase tracking-widest p-2 outline-none focus:border focus:border-primary transition-all cursor-pointer appearance-none"
                       value={sort()}
                       onChange={(e) => {
                         setSort(e.target.value);
@@ -451,7 +451,7 @@ export default function EventsIsland(props: Props) {
 
                                 return (
                                   <div
-                                    class={`event-section-item flex flex-col border-2 border-fg-0 rounded-none w-full relative mb-8 z-10 transition-all overflow-hidden ${isPast ? "opacity-90 grayscale-[15%]" : ""} bg-bg-0`}
+                                    class={`event-section-item flex flex-col border-1 border-fg-0/40 rounded w-full relative mb-8 z-10 transition-all overflow-hidden ${isPast ? "opacity-90 grayscale-[15%]" : ""} bg-bg-0`}
                                     id={`event-${event.id}`}
                                     data-index={index()}
                                   >
@@ -513,7 +513,7 @@ export default function EventsIsland(props: Props) {
                                         </h3>
 
                                         <Show when={event.description}>
-                                          <p class="text-sm xl:text-base text-fg-1 font-sans leading-relaxed mb-8 line-clamp-4 italic opacity-80">
+                                          <p class="text-sm xl:text-base text-fg-1 font-sans leading-relaxed mb-8 line-clamp-4 opacity-80">
                                             {event.description}
                                           </p>
                                         </Show>
