@@ -172,20 +172,30 @@ export interface Report {
   img: string;
 }
 
+export type AnimationVariant =
+  | "constellation"
+  | "data-stream"
+  | "topographical-matrix";
+
 export interface HeroMainConfig {
-  type: "img" | "video" | "iframe" | "animation";
+  type: "img" | "video" | "iframe" | "animation" | "none";
   src: string;
   link: string;
   buttontext: string;
   desc: string;
+  animation_variant?: AnimationVariant;
+}
+
+export interface CarouselItem {
+  type: "img" | "video";
+  src: string;
+  priority: number;
 }
 
 export interface TeamMainConfig {
   title: string;
   subtitle: string;
-  src: string;
-  type: "img" | "video";
-  images?: string[];
+  items: CarouselItem[];
 }
 
 export interface SlotConfig {

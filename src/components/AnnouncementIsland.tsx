@@ -3,6 +3,7 @@ import type { Announcement } from "../types";
 
 interface Props {
   announcements: Announcement[];
+  centered?: boolean;
 }
 
 const CONFIG = {
@@ -131,7 +132,9 @@ export default function AnnouncementRotator(props: Props) {
 
   return (
     <>
-      <div class="w-full max-w-full mb-6 md:mb-8 relative z-30">
+      <div
+        class={`w-full max-w-full mb-6 pointer-events-auto md:mb-8 relative z-30 flex ${props.centered ? "justify-center" : "justify-start"}`}
+      >
         <div
           ref={widgetRef}
           class="relative flex flex-col w-full max-w-sm"

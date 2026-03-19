@@ -41,37 +41,53 @@ const footerSlotHtml =
   typeof footerSlotRaw === "string" ? footerSlotRaw : footerSlotRaw?.html;
 
 const generateThemeStyles = (colors?: ThemeColors) => {
-  if (!colors) return "";
+  const fallbacks = {
+    light: {
+      bg0: "#faf9f6",
+      bg1: "#ffffff",
+      bg2: "#e5e7eb",
+      fg0: "#101828",
+      fg1: "#475467",
+      primary: "#101828",
+      primaryFg: "#ffffff",
+    },
+    dark: {
+      bg0: "#0b111d",
+      bg1: "#162032",
+      bg2: "#1f2937",
+      fg0: "#f9fafb",
+      fg1: "#9ca3af",
+      primary: "#f9fafb",
+      primaryFg: "#101828",
+    },
+  };
+
+  const light = colors?.light || fallbacks.light;
+  const dark = colors?.dark || fallbacks.dark;
+
   let css = "";
 
-  if (colors.light) {
-    css += `:root {\n`;
-    if (colors.light.bg0) css += `--bg-0: ${colors.light.bg0};\n`;
-    if (colors.light.bg1) css += `--bg-1: ${colors.light.bg1};\n`;
-    if (colors.light.bg2) css += `--bg-2: ${colors.light.bg2};\n`;
-    if (colors.light.fg0) css += `--fg-0: ${colors.light.fg0};\n`;
-    if (colors.light.fg1) css += `--fg-1: ${colors.light.fg1};\n`;
-    if (colors.light.primary) css += `--primary: ${colors.light.primary};\n`;
-    if (colors.light.primaryFg)
-      css += `--primary-fg: ${colors.light.primaryFg};\n`;
-    css += `}\n`;
-  }
+  css += `html:root {\n`;
+  if (light.bg0) css += `--bg-0: ${light.bg0};\n`;
+  if (light.bg1) css += `--bg-1: ${light.bg1};\n`;
+  if (light.bg2) css += `--bg-2: ${light.bg2};\n`;
+  if (light.fg0) css += `--fg-0: ${light.fg0};\n`;
+  if (light.fg1) css += `--fg-1: ${light.fg1};\n`;
+  if (light.primary) css += `--primary: ${light.primary};\n`;
+  if (light.primaryFg) css += `--primary-fg: ${light.primaryFg};\n`;
+  css += `}\n`;
 
-  if (colors.dark) {
-    let darkRules = "";
-    if (colors.dark.bg0) darkRules += `--bg-0: ${colors.dark.bg0};\n`;
-    if (colors.dark.bg1) darkRules += `--bg-1: ${colors.dark.bg1};\n`;
-    if (colors.dark.bg2) darkRules += `--bg-2: ${colors.dark.bg2};\n`;
-    if (colors.dark.fg0) darkRules += `--fg-0: ${colors.dark.fg0};\n`;
-    if (colors.dark.fg1) darkRules += `--fg-1: ${colors.dark.fg1};\n`;
-    if (colors.dark.primary)
-      darkRules += `--primary: ${colors.dark.primary};\n`;
-    if (colors.dark.primaryFg)
-      darkRules += `--primary-fg: ${colors.dark.primaryFg};\n`;
+  let darkRules = "";
+  if (dark.bg0) darkRules += `--bg-0: ${dark.bg0};\n`;
+  if (dark.bg1) darkRules += `--bg-1: ${dark.bg1};\n`;
+  if (dark.bg2) darkRules += `--bg-2: ${dark.bg2};\n`;
+  if (dark.fg0) darkRules += `--fg-0: ${dark.fg0};\n`;
+  if (dark.fg1) darkRules += `--fg-1: ${dark.fg1};\n`;
+  if (dark.primary) darkRules += `--primary: ${dark.primary};\n`;
+  if (dark.primaryFg) darkRules += `--primary-fg: ${dark.primaryFg};\n`;
 
-    css += `:root.dark {\n${darkRules}}\n`;
-    css += `@media (prefers-color-scheme: dark) {\n  :root:not(.light) {\n${darkRules}  }\n}\n`;
-  }
+  css += `html:root.dark {\n${darkRules}}\n`;
+  css += `@media (prefers-color-scheme: dark) {\n  html:root:not(.light) {\n${darkRules}  }\n}\n`;
 
   return css;
 };

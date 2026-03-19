@@ -1,7 +1,6 @@
 ---
 import type { HeroConfig, HeroMainConfig, Announcement, Event } from "../types";
-import Announcements from "./AnnouncementIsland";
-import HeroVisuals from "./HeroVisuals";
+import HeroClient from "./HeroClient";
 
 interface Props {
   config: HeroConfig;
@@ -15,43 +14,13 @@ const { config, main, announcements, heroEvents } = Astro.props;
 
 <section
   id="hero"
-  class="bg-bg-0 transition-colors duration-300 overflow-hidden"
+  class="bg-bg-0 transition-colors duration-300 overflow-hidden relative"
 >
-  <div
-    class="grid grid-rows-9 md:grid-rows-1 md:grid-cols-3 md:gap-12 items-stretch min-h-[calc(100vh-80px)]"
-  >
-    <div
-      class="md:col-span-1 row-span-5 md:row-span-1 flex flex-col p-4 md:p-8 pt-6 md:pt-12 md:justify-between relative z-10"
-    >
-      <div class="flex flex-col gap-4 md:gap-0">
-        <Announcements announcements={announcements} client:load />
-        <h1
-          class="text-6xl md:text-6xl font-extrabold tracking-tight text-fg-0 font-sans leading-[1.1]"
-        >
-          {config.title || "National Students Data Corps"}
-        </h1>
-        <h2 class="text-xl md:text-2xl text-fg-1 mt-1 font-serif">
-          {config.subtitle || "MEC Chapter"}
-        </h2>
-      </div>
-      <p
-        class="text-lg text-fg-1 mt-8 md:mt-4 md:mb-0 font-sans leading-relaxed"
-      >
-        {config.desc || "Bridging the gap between academic curriculum and industry demand in data-centric careers."}
-      </p>
-    </div>
-
-    <div
-      class:list={[
-        "md:col-span-2 md:row-span-1 bg-bg-0 row-span-4 w-full h-[400px] md:h-auto relative group overflow-hidden",
-        ,
-      ]}
-    >
-      <HeroVisuals 
-        main={main} 
-        events={heroEvents || []} 
-        client:load 
-      />
-    </div>
-  </div>
+  <HeroClient
+    config={config}
+    main={main}
+    announcements={announcements}
+    heroEvents={heroEvents || []}
+    client:load
+  />
 </section>

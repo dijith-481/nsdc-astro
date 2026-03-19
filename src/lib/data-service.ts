@@ -122,7 +122,7 @@ const loadNeonData = async () => {
       desc: "",
     }) as HeroConfig;
     const heroMain = (configMap.get("hero-main") || {
-      type: "img",
+      type: "",
       src: "",
       link: "",
       buttontext: "",
@@ -131,8 +131,7 @@ const loadNeonData = async () => {
     const teamMain = (configMap.get("team-main") || {
       title: "",
       subtitle: "",
-      src: "",
-      type: "img",
+      items: [],
     }) as TeamMainConfig;
     const theme = (configMap.get("default-theme") || "system") as string;
 

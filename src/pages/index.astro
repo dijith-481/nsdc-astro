@@ -52,7 +52,7 @@ const potentialHeroEvents = data.events.filter((e) => {
   <EventIsland events={data.events} isMinimal={true} client:load />
 
   <TeamCarousel
-    images={data.config.teamMain.images || [data.config.teamMain.src]}
+    items={data.config.teamMain.items}
     title={data.config.teamMain.title}
     subtitle={data.config.teamMain.subtitle}
     client:load
