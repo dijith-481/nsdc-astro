@@ -148,7 +148,8 @@ export interface AboutConfig {
   chairperson?: AboutQuote;
   external_testimonial?: AboutQuote;
   impact?: {
-    line: string;
+    title: string;
+    desc: string;
   };
 }
 

@@ -21,6 +21,7 @@ export default function EventsIsland(props: Props) {
   const [sort, setSort] = createSignal("newest");
   const [searchQuery, setSearchQuery] = createSignal("");
   const [activeIndex, setActiveIndex] = createSignal(0);
+  const [showMobileFilters, setShowMobileFilters] = createSignal(false);
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "TBA";
@@ -219,22 +220,42 @@ export default function EventsIsland(props: Props) {
       class={`bg-bg-0 md:pt-16 text-fg-0 font-sans ${props.isMinimal ? "min-h-0 py-12" : "min-h-screen"}`}
     >
       {/* Mobile Sticky Header */}
-      <div class="lg:hidden sticky top-8 z-40 bg-bg-0/95 backdrop-blur-md border-b-2 border-fg-0 flex flex-col shadow-sm">
+      <div class="md:hidden sticky top-8 z-40 bg-bg-0/95 backdrop-blur-md border-b-2 border-fg-0 flex flex-col shadow-sm">
         <div class="flex flex-col gap-3 p-4 border-b border-fg-0/10">
           <div class="flex justify-between items-center">
             <h1 class="text-2xl font-bold uppercase tracking-tighter">
               {props.isMinimal ? "Featured Events" : "Events"}
             </h1>
             <Show when={!props.isMinimal}>
-              <span class="text-[10px] font-bold uppercase tracking-widest text-primary">
-                {processedData().length} Results
-              </span>
+              <div class="flex items-center gap-3">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-primary">
+                  {processedData().length} Results
+                </span>
+                <button
+                  onClick={() => setShowMobileFilters(!showMobileFilters())}
+                  class={`p-2 border transition-all duration-300 rounded-sm ${showMobileFilters() ? "bg-primary text-primary-fg border-primary" : "border-fg-0/20 bg-bg-1 text-fg-0"}`}
+                >
+                  <svg
+                    class={`w-4 h-4 transition-transform duration-300 ${showMobileFilters() ? "rotate-180" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2.5"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
             </Show>
           </div>
 
-          {/* Search & Filters - Hidden in Minimal Mode */}
-          <Show when={!props.isMinimal}>
-            <div class="flex flex-col gap-2 relative z-50">
+          {/* Search & Filters - Hidden in Minimal Mode, Collapsible on Mobile */}
+          <Show when={!props.isMinimal && showMobileFilters()}>
+            <div class="flex flex-col gap-2 relative z-50 pt-2 transition-all duration-300 ease-in-out">
               <input
                 type="text"
                 placeholder="Search events..."
@@ -279,17 +300,17 @@ export default function EventsIsland(props: Props) {
           </Show>
         </div>
 
-        <div class="flex justify-between items-center h-[48px] px-2 bg-bg-0 w-full relative z-40">
+        <div class="flex justify-between items-center h-8 px-1  bg-bg-0 w-full relative z-40">
           <div
             ref={mobileNavRef}
-            class="flex gap-1 h-full text-sm overflow-x-auto scrollbar-hide py-2 max-w-[65%]"
+            class="flex gap-1 h-full text-sm overflow-x-auto scrollbar-hide py-1 max-w-[60%]"
           >
             <For each={processedData()}>
               {(item, index) => (
                 <a
                   data-nav={item.id}
                   onClick={(e) => handleNavClick(e, index())}
-                  class={`mobile-nav-item font-mono transition-colors duration-200 px-3 flex items-center justify-center text-[10px] border text-nowrap shrink-0 cursor-pointer ${
+                  class={`mobile-nav-item font-mono transition-colors duration-200 px-2 flex items-center justify-center text-[10px] border text-nowrap shrink-0 cursor-pointer ${
                     activeIndex() === index()
                       ? "bg-fg-0 text-bg-0 border-fg-0 font-bold"
                       : "bg-bg-0 text-fg-1 border-transparent hover:border-fg-0/30 hover:text-fg-0"
@@ -304,7 +325,7 @@ export default function EventsIsland(props: Props) {
                 href="/events"
                 data-nav="view-all"
                 onClick={(e) => handleNavClick(e, processedData().length)}
-                class={`mobile-nav-item font-mono transition-colors duration-200 px-3 flex items-center justify-center text-[10px] border shrink-0 cursor-pointer ${
+                class={`mobile-nav-item font-mono transition-colors duration-200 px-2 flex items-center justify-center text-[10px] border shrink-0 cursor-pointer ${
                   activeIndex() === processedData().length
                     ? "bg-fg-0 text-bg-0 border-fg-0 font-bold"
                     : "bg-bg-0 text-primary border-transparent hover:border-fg-0/30"
@@ -314,8 +335,8 @@ export default function EventsIsland(props: Props) {
               </a>
             </Show>
           </div>
-          <div class="flex flex-col items-end justify-center text-right pl-3 overflow-hidden flex-1 border-l border-fg-0/10 h-full">
-            <h3 class="font-bold text-fg-0 uppercase tracking-tight truncate w-full text-right text-xl">
+          <div class="flex flex-col items-end justify-center text-right p-2 overflow-hidden flex-1 border-l border-fg-0/10 h-full">
+            <h3 class="font-bold text-fg-0 uppercase tracking-tight truncate w-full text-right text-sm">
               {activeIndex() === processedData().length
                 ? "All Events"
                 : processedData().length > 0
@@ -327,10 +348,10 @@ export default function EventsIsland(props: Props) {
       </div>
 
       <section class=" bg-bg-0 transition-colors duration-300">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div class="container mx-auto pt-4 px-4  md:px-8">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-12">
             {/* Desktop Sidebar */}
-            <div class="hidden lg:block lg:col-span-3">
+            <div class="hidden md:block md:col-span-3">
               <div class="sticky top-24 max-h-[calc(100vh-8rem)] flex flex-col">
                 <h1 class="text-4xl md:text-5xl font-bold text-fg-0 uppercase tracking-tighter leading-tight mb-8">
                   {props.isMinimal ? "Featured Events" : "Events"}
@@ -472,9 +493,9 @@ export default function EventsIsland(props: Props) {
             </div>
 
             {/* Main Content Area */}
-            <div class="lg:col-span-9 flex flex-col min-h-[50vh]">
+            <div class="md:col-span-9 flex flex-col min-h-[50vh]">
               <Show when={!props.isMinimal}>
-                <div class="w-full flex justify-between items-center mb-6 pt-2 md:pt-0">
+                <div class=" hidden md:flex w-full  justify-between items-center mb-6 pt-2 md:pt-0">
                   <p class="text-[10px] font-mono font-bold uppercase tracking-widest text-fg-1">
                     Showing {processedData().length} results
                   </p>
@@ -490,9 +511,9 @@ export default function EventsIsland(props: Props) {
 
                     return (
                       <Show when={groupEvents().length > 0}>
-                        <div class="flex flex-col gap-6">
+                        <div class="flex flex-col gap:4 md:gap-6">
                           <Show when={!props.isMinimal}>
-                            <div class="sticky top-[180px] lg:top-10 z-30 bg-bg-0 py-2">
+                            <div class="md:sticky  md:top-10 z-30 bg-bg-0 py-2">
                               <div class="flex items-center gap-4 border-b-2 border-fg-0/10">
                                 <h2 class="text-2xl font-bold uppercase tracking-widest text-fg-0 pb-2">
                                   {group}
@@ -515,7 +536,7 @@ export default function EventsIsland(props: Props) {
 
                                 return (
                                   <div
-                                    class={`event-section-item flex flex-col border-1 border-fg-0/40 rounded w-full relative mb-8 z-10 transition-all overflow-hidden ${isPast ? "opacity-90 grayscale-[15%]" : ""} bg-bg-0`}
+                                    class={`event-section-item flex flex-col border-1 border-fg-0/40 rounded w-full relative mb-4 md:mb-6 z-10 transition-all overflow-hidden ${isPast ? "opacity-90 grayscale-[15%]" : ""} bg-bg-0`}
                                     id={`event-${event.id}`}
                                     data-index={index()}
                                   >
@@ -541,7 +562,7 @@ export default function EventsIsland(props: Props) {
                                         class={`absolute inset-0 backdrop-blur-[30px] ${isUpcoming ? "bg-bg-0/10" : "bg-bg-0/70"} z-0 pointer-events-none`}
                                       />
                                       <div class="grid md:grid-cols-2 relative z-10">
-                                        <div class="p-4 md:pr-0 overflow-hidden aspect-square">
+                                        <div class="p-4 max-w-80 md:max-w-none mx-auto md:pr-0 overflow-hidden aspect-square">
                                           <Show
                                             when={event.image_url}
                                             fallback={
@@ -558,37 +579,37 @@ export default function EventsIsland(props: Props) {
                                           </Show>
                                         </div>
 
-                                        <div class="flex flex-col p-6">
-                                          <div class="flex items-center gap-3 mb-6 flex-wrap">
+                                        <div class="flex flex-col p-4 md:p-6">
+                                          <div class="flex items-center md:gap-3 md:mb-6 gap-2 mb-4 flex-wrap">
                                             <span
-                                              class={`text-xs font-mono font-bold uppercase tracking-widest ${event.computedStatus === "upcoming" ? "text-primary" : "text-fg-1"}`}
+                                              class={`text-xs font-mono font-bold uppercase md:tracking-widest ${event.computedStatus === "upcoming" ? "text-primary" : "text-fg-1"}`}
                                             >
                                               {formatDate(event.date)}
                                             </span>
                                             <span class="w-[4px] h-[4px] bg-fg-0/20 rounded-full"></span>
                                             {event.venue && (
-                                              <span class="text-xs font-mono font-bold text-fg-1 uppercase tracking-widest">
+                                              <span class="text-xs font-mono font-bold text-fg-1 uppercase md:tracking-widest">
                                                 {event.venue}
                                               </span>
                                             )}
                                             {event.event_type && (
-                                              <span class="text-[9px] font-bold bg-primary text-primary-fg px-2 py-[2px] rounded-sm uppercase tracking-wider ml-auto">
+                                              <span class="text-[9px] font-bold bg-primary text-primary-fg px-2 py-0.5 rounded-sm uppercase tracking-wider ml-auto">
                                                 {event.event_type}
                                               </span>
                                             )}
                                           </div>
 
-                                          <h3 class="font-bold text-fg-0 uppercase tracking-tighter mb-4 text-3xl xl:text-4xl leading-[1.1]">
+                                          <h3 class="font-bold text-fg-0 uppercase tracking-tighter mb-2 md:mb-4 text-2xl md:text-3xl leading-[1.1]">
                                             {event.title}
                                           </h3>
 
                                           <Show when={event.description}>
-                                            <p class="text-sm xl:text-base text-fg-1 font-sans leading-relaxed mb-8 line-clamp-4 opacity-80">
+                                            <p class="text-sm md:text-base text-fg-1 font-sans mb-4  md:mb-8 line-clamp-4 opacity-90">
                                               {event.description}
                                             </p>
                                           </Show>
 
-                                          <div class="flex gap-4 mt-auto border-t-2 border-fg-0/10 pt-6">
+                                          <div class="flex gap-4 mt-auto border-t-2 border-fg-0/10 pt-2">
                                             <a
                                               href={`/event/${event.id}`}
                                               class="relative group text-xs font-bold uppercase tracking-widest text-fg-0 hover:text-primary transition-colors py-2"
