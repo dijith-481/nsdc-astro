@@ -1,5 +1,6 @@
 ---
 import type { AboutConfig, SiteData } from "../types";
+import { parseEventDate } from "../lib/date-utils";
 
 interface Props {
   content: AboutConfig;
@@ -27,9 +28,11 @@ const lifetimeMembersCount = uniqueMemberNames.size;
 
 // 2. Events & Recent Info
 const allEvents = siteData?.events || [];
-const conductedEvents = allEvents.filter(
-  (e) => e.status === "past" || e.status === "recent",
-);
+const now = new Date().getTime();
+const conductedEvents = allEvents.filter((e) => {
+  const eventDate = parseEventDate(e.date);
+  return eventDate > 0 && eventDate < now;
+});
 const eventsCount = conductedEvents.length;
 
 // 3. Publications

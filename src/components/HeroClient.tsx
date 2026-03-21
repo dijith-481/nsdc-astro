@@ -53,7 +53,7 @@ export default function HeroClient(props: Props) {
              ========================================= */
           <div class="relative w-full min-h-screen flex flex-col overflow-hidden">
             {/* Background Layer (Animation/Glow) */}
-            <div class="absolute inset-0 pointer-events-auto z-0 opacity-40">
+            <div class="absolute inset-0 pointer-events-none z-0 opacity-40">
               <Show
                 when={props.main.animation_variant}
                 fallback={
@@ -67,7 +67,7 @@ export default function HeroClient(props: Props) {
             </div>
 
             {/* Content Layer */}
-            <div class="relative z-10 flex-grow pointer-events-none flex flex-col items-center justify-center text-center px-4 py-20">
+            <div class="relative z-10 flex-grow pointer-events-auto flex flex-col items-center justify-center text-center px-4 py-20">
               <div class="max-w-5xl mx-auto w-full flex flex-col items-center ">
                 <Announcements
                   announcements={props.announcements}

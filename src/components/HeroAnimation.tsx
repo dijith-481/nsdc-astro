@@ -1,16 +1,11 @@
 import { onMount, onCleanup } from "solid-js";
-
-export type AnimationVariant =
-  | "constellation"
-  | "data-stream"
-  | "topographical-matrix";
+import type { AnimationVariant } from "../types";
 
 interface HeroAnimationProps {
   variant?: AnimationVariant;
 }
 
 export default function HeroAnimation(props: HeroAnimationProps) {
-  console.log("props", props.variant);
   let canvasRef: HTMLCanvasElement | undefined;
   let containerRef: HTMLDivElement | undefined;
 
@@ -57,7 +52,15 @@ export default function HeroAnimation(props: HeroAnimationProps) {
       return { r: 99, g: 102, b: 241 };
     };
 
-    const variant = props.variant || "constellation";
+    let variant = props.variant || "constellation";
+    if (variant === "random") {
+      const variants: AnimationVariant[] = [
+        "constellation",
+        "data-stream",
+        "topographical-matrix",
+      ];
+      variant = variants[Math.floor(Math.random() * variants.length)];
+    }
 
     // ─────────────────────────────────────────────
     // VARIANT 1: CONSTELLATION (Original)
@@ -548,9 +551,18 @@ export default function HeroAnimation(props: HeroAnimationProps) {
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
+      if (!canvasRef) return;
+      const rect = canvasRef.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+        mouse.x = x;
+        mouse.y = y;
+      } else {
+        mouse.x = -2000;
+        mouse.y = -2000;
+      }
     };
 
     const handleMouseLeave = () => {
@@ -559,10 +571,18 @@ export default function HeroAnimation(props: HeroAnimationProps) {
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 0) {
-        const rect = canvas.getBoundingClientRect();
-        mouse.x = e.touches[0].clientX - rect.left;
-        mouse.y = e.touches[0].clientY - rect.top;
+      if (e.touches.length > 0 && canvasRef) {
+        const rect = canvasRef.getBoundingClientRect();
+        const x = e.touches[0].clientX - rect.left;
+        const y = e.touches[0].clientY - rect.top;
+
+        if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+          mouse.x = x;
+          mouse.y = y;
+        } else {
+          mouse.x = -2000;
+          mouse.y = -2000;
+        }
       }
     };
 
@@ -572,31 +592,25 @@ export default function HeroAnimation(props: HeroAnimationProps) {
     };
 
     window.addEventListener("resize", handleResize);
-    containerRef.addEventListener("mousemove", handleMouseMove);
-    containerRef.addEventListener("mouseleave", handleMouseLeave);
-    containerRef.addEventListener("touchmove", handleTouchMove, {
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseleave", handleMouseLeave);
+    window.addEventListener("touchmove", handleTouchMove, {
       passive: true,
     });
-    containerRef.addEventListener("touchend", handleTouchEnd);
+    window.addEventListener("touchend", handleTouchEnd);
 
     onCleanup(() => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
-      if (containerRef) {
-        containerRef.removeEventListener("mousemove", handleMouseMove);
-        containerRef.removeEventListener("mouseleave", handleMouseLeave);
-        containerRef.removeEventListener("touchmove", handleTouchMove);
-        containerRef.removeEventListener("touchend", handleTouchEnd);
-      }
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
     });
   });
 
   return (
-    <div
-      ref={containerRef}
-      class="w-full h-full relative"
-      style={{ "touch-action": "none" }}
-    >
+    <div ref={containerRef} class="w-full h-full relative pointer-events-none">
       <canvas ref={canvasRef} class="w-full h-full block" />
     </div>
   );

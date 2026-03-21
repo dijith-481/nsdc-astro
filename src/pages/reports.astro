@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import { dataService } from "../lib/data-service";
 import ReportComponent from "../components/Reports.astro";
+import { parseEventDate } from "../lib/date-utils";
 
 const data = await dataService.getInitialData();
 
@@ -9,8 +10,12 @@ if (!data) {
   throw new Error("Failed to load data for the reports page.");
 }
 
+const now = new Date().getTime();
 const reports = data.events
-  .filter((e) => e.status === 'past' && e.report_url)
+  .filter((e) => {
+    const eventDate = parseEventDate(e.date);
+    return eventDate > 0 && eventDate < now && e.report_url;
+  })
   .map((e) => ({
     id: e.id.toString(),
     relation: e.id.toString(), // Using id as fallback for relation

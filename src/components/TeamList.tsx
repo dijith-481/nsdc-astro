@@ -255,7 +255,7 @@ export default function TeamList(props: TeamListProps) {
                                       class="w-full h-full object-cover"
                                       loading={isCritical ? "eager" : "lazy"}
                                       decoding="async"
-                                      attr:fetchpriority={
+                                      fetchpriority={
                                         isCritical ? "high" : "auto"
                                       }
                                       style={{
