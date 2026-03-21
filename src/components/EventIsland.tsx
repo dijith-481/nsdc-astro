@@ -47,11 +47,7 @@ export default function EventsIsland(props: Props) {
     const mappedEvents = props.events.map((e) => {
       const ts = parseEventDate(e.date);
       let status = "past";
-
-      if (e.metadata?.hero_config) {
-        const start = new Date(e.metadata.hero_config.start_date).getTime();
-        if (now < start) status = "upcoming";
-      } else if (ts >= now) {
+      if (ts >= now) {
         status = "upcoming";
       } else if (ts >= oneYearAgo) {
         status = "recent";
