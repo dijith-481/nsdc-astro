@@ -639,7 +639,7 @@ export default function EventsIsland(props: Props) {
                                         </div>
                                       </Show>
                                       <div
-                                        class={`absolute inset-0 backdrop-blur-[30px] ${isUpcoming ? "bg-bg-0/10" : "bg-bg-0/70"} z-0 pointer-events-none`}
+                                        class={`absolute inset-0 backdrop-blur-[30px] ${isUpcoming ? "bg-bg-0/50" : "bg-bg-0/70"} z-0 pointer-events-none`}
                                       />
                                       <div class="grid md:grid-cols-2 relative z-10">
                                         <div class="p-4 max-w-80 md:max-w-none mx-auto md:pr-0 overflow-hidden aspect-square">
@@ -716,7 +716,7 @@ export default function EventsIsland(props: Props) {
                                                   href={extra.link}
                                                   target={getTarget(extra.link)}
                                                   rel={getRel(extra.link)}
-                                                  class="relative group text-xs font-bold uppercase tracking-widest text-primary hover:text-fg-0 transition-colors py-2 pl-4 border-l-2 border-bg-2"
+                                                  class="relative group text-xs font-bold uppercase tracking-widest text-primary hover:text-fg-0 transition-colors py-2 pl-4  "
                                                 >
                                                   <span>{extra.title}</span>
                                                   <span class="absolute bottom-0 right-0 h-[2px] w-full bg-fg-0 transform scale-x-0 origin-right transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:origin-left" />
