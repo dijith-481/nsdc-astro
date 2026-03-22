@@ -12,13 +12,15 @@ import type {
   BgConfig,
   HeroStateConfig,
 } from "../types";
+import { parseEventDate } from "../lib/date-utils";
 
 interface Props {
   event: Event;
 }
 
 const calculateTimeLeft = (targetDate: string, currentNow: number) => {
-  const difference = new Date(targetDate).getTime() - currentNow;
+  const targetTs = parseEventDate(targetDate);
+  const difference = targetTs - currentNow;
   let timeLeft = {
     days: 0,
     hours: 0,
@@ -26,7 +28,7 @@ const calculateTimeLeft = (targetDate: string, currentNow: number) => {
     seconds: 0,
   };
 
-  if (difference > 0) {
+  if (targetTs > 0 && difference > 0) {
     timeLeft = {
       days: Math.floor(difference / (1000 * 60 * 60 * 24)),
       hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
@@ -56,8 +58,8 @@ export default function HeroEvent(props: Props) {
   });
 
   const state = createMemo(() => {
-    const start = new Date(config.start_date).getTime();
-    const end = new Date(config.end_date).getTime();
+    const start = parseEventDate(config.start_date);
+    const end = parseEventDate(config.end_date);
     const current = now();
 
     if (current < start) return "upcoming";

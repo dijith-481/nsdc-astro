@@ -2,12 +2,15 @@
 import Layout from "../../layouts/Layout.astro";
 import { dataService } from "../../lib/data-service";
 import { parseEventDate } from "../../lib/date-utils";
+import { slugify } from "../../lib/slugify";
 
-const { id } = Astro.params;
+const { slug } = Astro.params;
 const data = await dataService.getInitialData();
 
-// Find by ID
-const event = data.events.find((e) => e.id.toString() === id);
+// Find by Slug (primary) or ID (fallback)
+const event = data.events.find(
+  (e) => slugify(e.title) === slug || e.id.toString() === slug,
+);
 
 if (!event || !event.report_url) {
   return Astro.redirect("/404");

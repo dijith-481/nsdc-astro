@@ -9,6 +9,7 @@ import {
 } from "solid-js";
 import type { Event } from "../types";
 import { parseEventDate } from "../lib/date-utils";
+import { slugify } from "../lib/slugify";
 import Dropdown from "./ui/Dropdown";
 
 interface Props {
@@ -665,7 +666,7 @@ export default function EventsIsland(props: Props) {
 
                                           <div class="flex gap-4 mt-auto border-t-2 border-fg-0/10 pt-2">
                                             <a
-                                              href={`/event/${event.id}`}
+                                              href={`/event/${slugify(event.title)}`}
                                               class="relative group text-xs font-bold uppercase tracking-widest text-fg-0 hover:text-primary transition-colors py-2"
                                             >
                                               <span>
@@ -676,7 +677,7 @@ export default function EventsIsland(props: Props) {
                                             </a>
                                             <Show when={event.report_url}>
                                               <a
-                                                href={`/report/${event.id}`}
+                                                href={`/report/${slugify(event.title)}`}
                                                 class="relative group text-xs font-bold uppercase tracking-widest text-fg-1 hover:text-fg-0 transition-colors py-2 pl-4 border-l-2 border-bg-2"
                                               >
                                                 <span>Read Report</span>

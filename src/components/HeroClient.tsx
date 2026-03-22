@@ -3,6 +3,7 @@ import type { HeroConfig, HeroMainConfig, Announcement, Event } from "../types";
 import HeroEvent from "./HeroEvent";
 import HeroAnimation from "./HeroAnimation";
 import Announcements from "./AnnouncementIsland";
+import { parseEventDate } from "../lib/date-utils";
 
 interface Props {
   config: HeroConfig;
@@ -29,8 +30,8 @@ export default function HeroClient(props: Props) {
       const meta = e.metadata?.hero_config;
       if (!meta || !meta.show_in_hero) return false;
 
-      const start = new Date(meta.start_date).getTime();
-      const end = new Date(meta.end_date).getTime();
+      const start = parseEventDate(meta.start_date);
+      const end = parseEventDate(meta.end_date);
       const before = (meta.before || 0) * 60 * 1000;
       const after = (meta.after || 0) * 60 * 1000;
 
@@ -126,11 +127,14 @@ export default function HeroClient(props: Props) {
                   <Show when={props.main.type === "video" && props.main.src}>
                     <video
                       src={props.main.src}
-                      class="w-full h-full object-cover"
+                      class="w-full h-full object-cover cursor-pointer"
                       autoplay
                       loop
                       muted
                       playsinline
+                      onClick={(e) => {
+                        e.currentTarget.muted = !e.currentTarget.muted;
+                      }}
                     />
                   </Show>
                   <Show when={props.main.type === "iframe" && props.main.src}>

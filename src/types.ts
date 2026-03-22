@@ -223,6 +223,8 @@ export interface ShortUrlMetadata {
   height?: string;
   types?: string[];
   excluded_types?: string[];
+  iseventregistration?: boolean;
+  eventid?: string | number;
 }
 
 export interface ShortUrl {

@@ -2,12 +2,15 @@
 import Layout from "../../layouts/Layout.astro";
 import { dataService } from "../../lib/data-service";
 import { parseEventDate } from "../../lib/date-utils";
+import { slugify } from "../../lib/slugify";
 
-const { id } = Astro.params;
+const { slug } = Astro.params;
 const data = await dataService.getInitialData();
 
-// Find by ID
-const event = data.events.find((e) => e.id.toString() === id);
+// Find by Slug (primary) or ID (fallback)
+const event = data.events.find(
+  (e) => slugify(e.title) === slug || e.id.toString() === slug,
+);
 
 if (!event) {
   return Astro.redirect("/404");
@@ -31,10 +34,9 @@ const currentStatus = (() => {
   const now = new Date().getTime();
   const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;
 
-  if (event.metadata?.hero_config) {
-    const start = new Date(event.metadata.hero_config.start_date).getTime();
-    if (now < start) return "upcoming";
-  }
+  // REMOVED: hero_config.start_date override. 
+  // Status should be determined by actual event date.
+  
   if (ts >= now) return "upcoming";
   if (ts >= oneYearAgo) return "recent";
   return "past";
@@ -184,7 +186,7 @@ const currentStatus = (() => {
                   </p>
                   {event.report_url && (
                     <a
-                      href={`/report/${event.id}`}
+                      href={`/report/${slugify(event.title)}`}
                       class="block w-full py-3 md:py-4 text-center text-sm font-bold uppercase tracking-widest bg-primary text-primary-fg hover:bg-fg-0 hover:text-bg-0 transition-colors border-2 border-primary hover:border-fg-0"
                     >
                       View Event Report
@@ -355,7 +357,9 @@ const currentStatus = (() => {
                 Structure
               </h2>
               <div class="grid gap-4">
-                {meta.rounds.map((round) => (
+                {meta.rounds
+                  .sort((a, b) => a.priority - b.priority)
+                  .map((round) => (
                   <div class="border-2 border-bg-2 p-4 md:p-6">
                     <div class="flex flex-col md:flex-row justify-between md:items-center gap-2 md:gap-4 mb-3 md:mb-4 pb-3 md:pb-4 border-b-2 border-bg-2">
                       <h3 class="text-xl font-bold uppercase tracking-tight text-fg-0">

@@ -3,6 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import { dataService } from "../lib/data-service";
 import ReportComponent from "../components/Reports.astro";
 import { parseEventDate } from "../lib/date-utils";
+import { slugify } from "../lib/slugify";
 
 const data = await dataService.getInitialData();
 
@@ -17,8 +18,8 @@ const reports = data.events
     return eventDate > 0 && eventDate < now && e.report_url;
   })
   .map((e) => ({
-    id: e.id.toString(),
-    relation: e.id.toString(), // Using id as fallback for relation
+    id: slugify(e.title),
+    relation: slugify(e.title),
     date: e.date || "",
     title: e.title,
     desc: e.description || "",
