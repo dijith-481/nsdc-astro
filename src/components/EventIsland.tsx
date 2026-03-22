@@ -654,7 +654,7 @@ export default function EventsIsland(props: Props) {
                                             <img
                                               src={event.image_url as string}
                                               alt={event.title}
-                                              class="w-full h-full transition-transform duration-700 group-hover/card:scale-105"
+                                              class="w-full h-full transition-transform duration-700 "
                                             />
                                           </Show>
                                         </div>
