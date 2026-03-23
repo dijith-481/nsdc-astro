@@ -15,9 +15,16 @@ interface Props {
   links: Link[];
   injections?: GlobalInjections;
   colors: ThemeColors | undefined;
+  description?: string;
+  image?: string |null;
 }
 
-const { title, links, injections, colors } = Astro.props;
+const { title, links, injections, colors, description, image } = Astro.props;
+
+const metaDescription =
+  description ||
+  "Official website of National Students Data Corps (NSDC) MEC Chapter.";
+const metaImage = image || "https://ik.imagekit.io/LOL123/opengraph.png?tr=f-webp";
 
 const topHtmlRaw = injections?.top_html;
 let topHtmlConfig: TopHtmlConfig | null = null;
@@ -111,27 +118,15 @@ const themeCss = generateThemeStyles(colors);
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
-    <meta
-      property="og:description"
-      content="Official website of National Students Data Corps (NSDC) MEC Chapter."
-    />
-    <meta
-      property="og:image"
-      content="https://ik.imagekit.io/LOL123/opengraph.png?tr=f-webp"
-    />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:image" content={metaImage} />
     <meta property="og:site_name" content="NSDC MEC" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
-    <meta
-      name="twitter:description"
-      content="Official website of National Students Data Corps (NSDC) MEC Chapter."
-    />
-    <meta
-      name="twitter:image"
-      content="https://ik.imagekit.io/LOL123/opengraph.png?tr=f-webp"
-    />
+    <meta name="twitter:description" content={metaDescription} />
+    <meta name="twitter:image" content={metaImage} />
 
     <link rel="preconnect" href="https://ik.imagekit.io" />
     <title>{title}</title>

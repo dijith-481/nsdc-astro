@@ -27,6 +27,12 @@ const formattedDate = (() => {
     day: "numeric",
   });
 })();
+
+const metaDescription = event.description
+  ? event.description.length > 160
+    ? event.description.substring(0, 157) + "..."
+    : event.description
+  : `Event report for ${event.title}`;
 ---
 
 <Layout
@@ -34,6 +40,8 @@ const formattedDate = (() => {
   links={data.links}
   injections={data.config.injections}
   colors={data.config.colors}
+  description={metaDescription}
+  image={event.image_url}
 >
   <div class="flex flex-col lg:flex-row min-h-screen bg-bg-0">
     {/* Left Side: Info (Sticky) */}

@@ -42,6 +42,12 @@ const formattedTime = (() => {
 
 const meta = event.metadata || {};
 
+const metaDescription = event.description
+  ? event.description.length > 160
+    ? event.description.substring(0, 157) + "..."
+    : event.description
+  : undefined;
+
 const currentStatus = (() => {
   const ts = parseEventDate(event.date);
   const now = new Date().getTime();
@@ -63,6 +69,8 @@ const currentStatus = (() => {
   links={data.links}
   injections={data.config.injections}
   colors={data.config.colors}
+  description={metaDescription}
+  image={event.image_url}
 >
     {/* Mobile Sticky Header */}
     <div class="md:hidden sticky top-10 z-40 bg-bg-0/95 backdrop-blur-md border-b-2 border-fg-0 flex flex-col pt-3 pb-3 px-4 shadow-sm gap-2">
